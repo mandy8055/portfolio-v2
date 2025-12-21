@@ -23,12 +23,6 @@ export function Navbar() {
                 About
               </Link>
               <Link
-                href='/#skills'
-                className='text-sm font-medium text-muted-foreground hover:text-foreground transition-colors'
-              >
-                Skills
-              </Link>
-              <Link
                 href='/#projects'
                 className='text-sm font-medium text-muted-foreground hover:text-foreground transition-colors'
               >
