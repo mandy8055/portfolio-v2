@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import Link from 'next/link';
 import { projects } from '@/data/projects';
 import { Container } from '@/components/ui/Container';
 import { Section, SectionTitle, SectionHeader } from '@/components/ui/Section';
@@ -13,15 +14,15 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Github } from 'lucide-react';
+import { ExternalLink, Github, ArrowRight } from 'lucide-react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
 import { GradientText } from '@/components/animations/GradientText';
 
 export function ProjectsSection() {
-  const featuredProjects = projects.filter((p) => p.featured);
+  const featuredProjects = projects.filter((p) => p.featured).slice(0, 3);
 
   return (
-    <Section id='projects' className='relative overflow-hidden'>
+    <Section id='projects' className='relative overflow-hidden z-10'>
       {/* Background Effects */}
       <div className='absolute inset-0 bg-linear-to-b from-transparent via-primary/5 to-transparent pointer-events-none' />
 
@@ -30,9 +31,7 @@ export function ProjectsSection() {
           <SectionTitle>
             Featured <GradientText animate={false}>Projects</GradientText>
           </SectionTitle>
-          <p className='text-muted-foreground'>
-            A selection of projects I've worked on
-          </p>
+          <p className='text-muted-foreground'>A selection of my best work</p>
         </SectionHeader>
 
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
@@ -83,6 +82,16 @@ export function ProjectsSection() {
               </Card>
             </ScrollReveal>
           ))}
+        </div>
+
+        {/* View All Projects Button */}
+        <div className='flex justify-center mt-12'>
+          <Button size='lg' asChild>
+            <Link href='/projects'>
+              View All Projects
+              <ArrowRight className='size-4 ml-2' />
+            </Link>
+          </Button>
         </div>
       </Container>
     </Section>

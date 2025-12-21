@@ -1,7 +1,14 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin '@tailwindcss/typography';
+@import 'highlight.js/styles/github-dark.css';
 
 @custom-variant dark (&:is(.dark *));
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -122,4 +129,20 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Task list styling */
+.prose ul.contains-task-list {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.prose ul.contains-task-list li {
+  padding-left: 1.5em;
+}
+
+.prose ul.contains-task-list li input[type='checkbox'] {
+  margin-right: 0.5em;
+  margin-left: -1.5em;
+  cursor: pointer;
 }

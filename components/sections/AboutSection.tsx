@@ -12,7 +12,7 @@ import { GradientText } from '@/components/animations/GradientText';
 
 export function AboutSection() {
   return (
-    <Section id='about'>
+    <Section id='about' className='relative z-10'>
       <Container>
         <SectionHeader>
           <SectionTitle>

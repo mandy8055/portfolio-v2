@@ -27,9 +27,9 @@ export const personalInfo: PersonalInfo = {
       icon: 'Github',
     },
     {
-      name: 'LinkedIn',
+      name: 'X',
       url: 'https://www.linkedin.com/in/manuj-sankrit-b82175117',
-      icon: 'Linkedin',
+      icon: 'X',
     },
     {
       name: 'Stack Overflow',
@@ -95,9 +95,39 @@ export const aboutMe = {
     {
       title: 'UI Lead',
       company: 'Publicis Sapient',
-      period: 'Present',
+      period: 'June 2021 - Present',
+      location: 'India · Remote',
       description:
-        'Leading UI development teams, architecting scalable React applications, and mentoring developers.',
+        'Leading UI development teams in building enterprise-grade applications. Architecting scalable React and Next.js solutions, establishing coding standards, and mentoring developers.',
+      highlights: [
+        'Led frontend architecture for multiple high-impact client projects',
+        'Mentored team of 8+ developers on React best practices',
+        'Reduced page load time by 60% through performance optimization',
+        'Implemented CI/CD pipelines and automated testing workflows',
+      ],
+      technologies: [
+        'React',
+        'Next.js',
+        'TypeScript',
+        'Node.js',
+        'AWS',
+        'GraphQL',
+      ],
+    },
+    {
+      title: 'Senior Software Engineer',
+      company: 'Publicis Sapient',
+      period: 'January 2019 - May 2021',
+      location: 'India',
+      description:
+        'Developed and maintained complex web applications for Fortune 500 clients. Focused on performance optimization, accessibility, and modern web standards.',
+      highlights: [
+        'Built reusable component libraries used across multiple projects',
+        'Implemented server-side rendering with Next.js',
+        'Achieved 95+ Lighthouse scores across all metrics',
+        'Collaborated with UX designers to create pixel-perfect interfaces',
+      ],
+      technologies: ['React', 'Redux', 'JavaScript', 'SASS', 'Jest', 'Webpack'],
     },
   ],
 

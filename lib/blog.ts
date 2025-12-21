@@ -3,6 +3,9 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import { format } from 'date-fns';
 import readingTime from 'reading-time';
+import { compileMDX } from 'next-mdx-remote/rsc';
+import rehypeHighlight from 'rehype-highlight';
+import remarkGfm from 'remark-gfm';
 
 // Types
 export interface BlogPost {
@@ -14,7 +17,7 @@ export interface BlogPost {
   author: string;
   tags: string[];
   readingTime: string;
-  content: string;
+  content: React.ReactElement;
   published: boolean;
 }
 
@@ -45,26 +48,47 @@ export function getBlogFiles(): string[] {
 /**
  * Get a single blog post by slug
  */
-export function getBlogPost(slug: string): BlogPost | null {
+export async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
     const filePath = path.join(BLOG_PATH, `${slug}.mdx`);
     const fileContents = fs.readFileSync(filePath, 'utf8');
-    const { data, content } = matter(fileContents);
 
-    // Calculate reading time
-    const stats = readingTime(content);
+    // Calculate reading time from raw content
+    const stats = readingTime(fileContents);
+
+    // Compile MDX
+    const { content, frontmatter } = await compileMDX<{
+      title: string;
+      description: string;
+      date: string;
+      author?: string;
+      tags?: string[];
+      published?: boolean;
+    }>({
+      source: fileContents,
+      options: {
+        parseFrontmatter: true,
+        mdxOptions: {
+          remarkPlugins: [remarkGfm],
+          rehypePlugins: [rehypeHighlight],
+        },
+      },
+    });
 
     return {
       slug,
-      title: data.title || 'Untitled',
-      description: data.description || '',
-      date: data.date || new Date().toISOString(),
-      formattedDate: format(new Date(data.date || new Date()), 'MMMM dd, yyyy'),
-      author: data.author || 'Manuj Sankrit',
-      tags: data.tags || [],
+      title: frontmatter.title || 'Untitled',
+      description: frontmatter.description || '',
+      date: frontmatter.date || new Date().toISOString(),
+      formattedDate: format(
+        new Date(frontmatter.date || new Date()),
+        'MMMM dd, yyyy',
+      ),
+      author: frontmatter.author || 'Manuj Sankrit',
+      tags: frontmatter.tags || [],
       readingTime: stats.text,
       content,
-      published: data.published ?? true,
+      published: frontmatter.published ?? true,
     };
   } catch (error) {
     console.error(`Error reading blog post: ${slug}`, error);
@@ -81,12 +105,32 @@ export function getAllBlogPosts(): BlogPostMetadata[] {
   const posts = files
     .map((filename) => {
       const slug = filename.replace(/\.mdx$/, '');
-      const post = getBlogPost(slug);
-      if (!post) return null;
 
-      // Remove content to reduce memory usage
-      const { content, ...metadata } = post;
-      return metadata;
+      // Read file and parse frontmatter only (no MDX compilation)
+      try {
+        const filePath = path.join(BLOG_PATH, `${slug}.mdx`);
+        const fileContents = fs.readFileSync(filePath, 'utf8');
+        const { data } = matter(fileContents);
+        const stats = readingTime(fileContents);
+
+        return {
+          slug,
+          title: data.title || 'Untitled',
+          description: data.description || '',
+          date: data.date || new Date().toISOString(),
+          formattedDate: format(
+            new Date(data.date || new Date()),
+            'MMMM dd, yyyy',
+          ),
+          author: data.author || 'Manuj Sankrit',
+          tags: data.tags || [],
+          readingTime: stats.text,
+          published: data.published ?? true,
+        };
+      } catch (error) {
+        console.error(`Error reading blog post metadata: ${slug}`, error);
+        return null;
+      }
     })
     .filter((post): post is BlogPostMetadata => post !== null)
     .filter((post) => post.published) // Only return published posts
@@ -137,11 +181,11 @@ export function searchBlogPosts(query: string): BlogPostMetadata[] {
 /**
  * Get related posts based on shared tags
  */
-export function getRelatedPosts(
+export async function getRelatedPosts(
   currentSlug: string,
   limit = 3,
-): BlogPostMetadata[] {
-  const currentPost = getBlogPost(currentSlug);
+): Promise<BlogPostMetadata[]> {
+  const currentPost = await getBlogPost(currentSlug);
   if (!currentPost) return [];
 
   const allPosts = getAllBlogPosts();

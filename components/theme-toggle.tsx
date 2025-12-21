@@ -28,6 +28,7 @@ export function ThemeToggle() {
       size='icon'
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       aria-label='Toggle theme'
+      className='cursor-pointer'
     >
       {theme === 'dark' ? (
         <Sun className='size-5 transition-all' />

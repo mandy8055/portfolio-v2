@@ -1,15 +1,17 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import Particles from '@tsparticles/react';
+import { useMemo, useEffect } from 'react';
+import Particles, { initParticlesEngine } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 import { useTheme } from 'next-themes';
 
 export function ParticlesBackground() {
   const { theme } = useTheme();
 
-  const particlesInit = useCallback(async (engine: any) => {
-    await loadSlim(engine);
+  useEffect(() => {
+    initParticlesEngine(async (engine) => {
+      await loadSlim(engine);
+    });
   }, []);
 
   const options = useMemo(
@@ -26,7 +28,7 @@ export function ParticlesBackground() {
           },
           onHover: {
             enable: true,
-            mode: 'repulse',
+            mode: 'grab',
           },
         },
         modes: {
@@ -41,39 +43,39 @@ export function ParticlesBackground() {
       },
       particles: {
         color: {
-          value: theme === 'dark' ? '#ffffff' : '#000000',
+          value: ['#14B8A6', '#06B6D4', '#0EA5E9', '#10B981', '#22D3EE'],
         },
         links: {
-          color: theme === 'dark' ? '#ffffff' : '#000000',
+          color: theme === 'dark' ? '#ffffff' : '#1a1a1a',
           distance: 150,
           enable: true,
-          opacity: theme === 'dark' ? 0.15 : 0.2,
+          opacity: 0.4,
           width: 1,
         },
         move: {
-          direction: 'none' as const,
+          direction: 'top' as const,
           enable: true,
           outModes: {
-            default: 'bounce' as const,
+            default: 'out' as const,
           },
           random: false,
-          speed: 1,
+          speed: 0.5,
           straight: false,
         },
         number: {
           density: {
             enable: true,
           },
-          value: 80,
+          value: 20,
         },
         opacity: {
-          value: 0.3,
+          value: 0.8,
         },
         shape: {
-          type: 'circle',
+          type: 'square',
         },
         size: {
-          value: { min: 1, max: 3 },
+          value: { min: 4, max: 10 },
         },
       },
       detectRetina: true,
@@ -84,7 +86,6 @@ export function ParticlesBackground() {
   return (
     <Particles
       id='tsparticles'
-      particlesLoaded={particlesInit}
       options={options as any}
       className='absolute inset-0'
     />

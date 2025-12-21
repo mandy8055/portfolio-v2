@@ -16,7 +16,7 @@ export function GradientText({
   if (!animate) {
     return (
       <span
-        className={`bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent ${className}`}
+        className={`bg-linear-to-r from-teal-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent ${className}`}
       >
         {children}
       </span>
@@ -25,7 +25,7 @@ export function GradientText({
 
   return (
     <motion.span
-      className={`inline-block bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent ${className}`}
+      className={`inline-block bg-linear-to-r from-teal-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent ${className}`}
       style={{
         backgroundSize: '200% auto',
       }}

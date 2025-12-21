@@ -1,4 +1,3 @@
-import { Navbar } from '@/components/navbar';
 import { EnhancedHero } from '@/components/sections/EnhancedHero';
 import { AboutSection } from '@/components/sections/AboutSection';
 import { ProjectsSection } from '@/components/sections/ProjectsSection';
@@ -6,17 +5,14 @@ import { ContactSection } from '@/components/sections/ContactSection';
 
 export default function Home() {
   return (
-    <>
-      <Navbar />
-      <div className='min-h-screen bg-background'>
-        {/* Enhanced Hero Section */}
-        <EnhancedHero />
+    <div className='min-h-screen bg-background'>
+      {/* Enhanced Hero Section */}
+      <EnhancedHero />
 
-        {/* Main Sections */}
-        <AboutSection />
-        <ProjectsSection />
-        <ContactSection />
-      </div>
-    </>
+      {/* Main Sections */}
+      <AboutSection />
+      <ProjectsSection />
+      <ContactSection />
+    </div>
   );
 }

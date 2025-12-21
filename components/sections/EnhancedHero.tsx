@@ -4,8 +4,14 @@ import { motion } from 'motion/react';
 import Link from 'next/link';
 import { personalInfo } from '@/data/personal';
 import { Button } from '@/components/ui/button';
+// Background Effects - Choose one or combine them!
 import { ParticlesBackground } from '@/components/backgrounds/ParticlesBackground';
 import { ShootingStars } from '@/components/backgrounds/ShootingStars';
+import { GridPattern } from '@/components/backgrounds/GridPattern';
+import { FloatingOrbs } from '@/components/backgrounds/FloatingOrbs';
+import { DotMatrix } from '@/components/backgrounds/DotMatrix';
+import { SpotlightEffect } from '@/components/backgrounds/SpotlightEffect';
+// Animations
 import { Typewriter } from '@/components/animations/Typewriter';
 import { GradientText } from '@/components/animations/GradientText';
 import { Github, Linkedin, Mail, FileText } from 'lucide-react';
@@ -20,17 +26,34 @@ export function EnhancedHero() {
 
   return (
     <section className='relative min-h-screen flex items-center justify-center overflow-hidden'>
-      {/* Particle Background */}
+      {/* 
+        🎨 BACKGROUND EFFECTS - Choose what you like!
+        Uncomment the ones you want to try:
+      */}
+
+      {/* Option 1: Particles (jsr.io style) */}
       <div className='absolute inset-0 z-0'>
         <ParticlesBackground />
       </div>
 
-      {/* Shooting Stars Effect */}
-      <ShootingStars />
+      {/* Option 2: Grid Pattern (minimal, clean) */}
+      {/* <GridPattern /> */}
 
-      {/* Gradient Overlays */}
-      <div className='absolute inset-0 bg-linear-to-b from-background/50 via-transparent to-background/80 pointer-events-none' />
-      <div className='absolute inset-0 bg-linear-to-r from-primary/5 via-transparent to-purple-500/5 pointer-events-none' />
+      {/* Option 3: Floating Orbs (soft, modern) */}
+      {/* <FloatingOrbs /> */}
+
+      {/* Option 4: Dot Matrix (tech, cyberpunk) */}
+      {/* <DotMatrix /> */}
+
+      {/* Option 5: Spotlight Effect (elegant, smooth) */}
+      {/* <SpotlightEffect /> */}
+
+      {/* Shooting Stars (optional) */}
+      {/* <ShootingStars /> */}
+
+      {/* Gradient Overlays - Reduced opacity to show particles */}
+      <div className='absolute inset-0 bg-linear-to-b from-background/20 via-transparent to-background/40 pointer-events-none' />
+      <div className='absolute inset-0 bg-linear-to-r from-teal-500/3 via-cyan-500/2 to-emerald-500/3 pointer-events-none' />
 
       {/* Content */}
       <div className='container mx-auto px-4 relative z-10'>
@@ -89,7 +112,16 @@ export function EnhancedHero() {
             className='flex flex-wrap gap-4 justify-center mb-12'
           >
             <Button size='lg' asChild className='group'>
-              <Link href='#projects'>
+              <a
+                href='#projects'
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById('projects')
+                    ?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className='cursor-pointer'
+              >
                 View Projects
                 <motion.span
                   className='ml-2'
@@ -98,10 +130,21 @@ export function EnhancedHero() {
                 >
                   →
                 </motion.span>
-              </Link>
+              </a>
             </Button>
             <Button variant='outline' size='lg' asChild>
-              <Link href='#contact'>Contact Me</Link>
+              <a
+                href='#contact'
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById('contact')
+                    ?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className='cursor-pointer'
+              >
+                Contact Me
+              </a>
             </Button>
             <Button variant='ghost' size='lg' asChild>
               <Link href={personalInfo.resume} target='_blank'>
@@ -109,53 +152,6 @@ export function EnhancedHero() {
                 Resume
               </Link>
             </Button>
-          </motion.div>
-
-          {/* Social Links */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 1 }}
-            className='flex gap-4'
-          >
-            {personalInfo.social.map((link, index) => (
-              <motion.a
-                key={link.name}
-                href={link.url}
-                target='_blank'
-                rel='noopener noreferrer'
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 + index * 0.1 }}
-                whileHover={{ scale: 1.1, y: -5 }}
-                className='p-3 rounded-full bg-muted/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 hover:bg-primary/10 transition-all'
-              >
-                {link.name === 'GitHub' && <Github className='size-5' />}
-                {link.name === 'LinkedIn' && <Linkedin className='size-5' />}
-                {link.name === 'Email' && <Mail className='size-5' />}
-                <span className='sr-only'>{link.name}</span>
-              </motion.a>
-            ))}
-          </motion.div>
-
-          {/* Scroll Indicator */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 1.2 }}
-            className='absolute bottom-8 left-1/2 -translate-x-1/2'
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className='w-6 h-10 border-2 border-muted-foreground/30 rounded-full flex justify-center'
-            >
-              <motion.div
-                animate={{ y: [0, 12, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className='w-1 h-3 bg-muted-foreground/50 rounded-full mt-2'
-              />
-            </motion.div>
           </motion.div>
         </div>
       </div>

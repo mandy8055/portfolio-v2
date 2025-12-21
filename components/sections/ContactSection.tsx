@@ -36,7 +36,7 @@ export function ContactSection() {
   };
 
   return (
-    <Section id='contact' className='bg-muted/50'>
+    <Section id='contact' className='bg-muted/50 relative z-10'>
       <Container size='md'>
         <SectionHeader>
           <SectionTitle>

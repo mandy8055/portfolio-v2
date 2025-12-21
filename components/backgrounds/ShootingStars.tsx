@@ -2,8 +2,11 @@
 
 import { motion } from 'motion/react';
 import { useMemo } from 'react';
+import { useTheme } from 'next-themes';
 
 export function ShootingStars() {
+  const { theme } = useTheme();
+
   const stars = useMemo(() => {
     return Array.from({ length: 20 }).map((_, i) => ({
       id: i,
@@ -14,12 +17,18 @@ export function ShootingStars() {
     }));
   }, []);
 
+  // Theme-aware gradient colors
+  const gradientClass =
+    theme === 'dark'
+      ? 'bg-gradient-to-r from-transparent via-white to-transparent'
+      : 'bg-gradient-to-r from-transparent via-gray-800 to-transparent';
+
   return (
     <div className='absolute inset-0 overflow-hidden pointer-events-none'>
       {stars.map((star) => (
         <motion.div
           key={star.id}
-          className='absolute h-[2px] w-[100px] bg-gradient-to-r from-transparent via-white to-transparent'
+          className={`absolute h-0.5 w-25 ${gradientClass}`}
           style={{
             left: `${star.x}%`,
             top: `${star.y}%`,
