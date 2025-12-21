@@ -12,12 +12,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/ui/Container';
 import { Section, SectionTitle, SectionHeader } from '@/components/ui/Section';
+import { Navbar } from '@/components/navbar';
 import Link from 'next/link';
 
 export default function Home() {
   const blogPosts = getAllBlogPosts();
 
-  return (
+  ret>
+      <Navbar />
+      <div className='min-h-screen bg-background
     <div className='min-h-screen bg-white dark:bg-gray-950'>
       {/* Hero Section */}
       <Section className='bg-linear-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950'>
@@ -70,7 +73,7 @@ export default function Home() {
       </Section>
 
       {/* Blog Preview */}
-      <Section className='bg-gray-50 dark:bg-gray-900'>
+      <Section className='bg-muted/50'>
         <Container>
           <SectionHeader>
             <SectionTitle>Latest Blog Posts</SectionTitle>
@@ -85,7 +88,7 @@ export default function Home() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className='text-gray-600 dark:text-gray-400 mb-4'>
+                  <p className='text-muted-foreground mb-4'>
                     {post.description}
                   </p>
                   <div className='flex flex-wrap gap-2 mb-4'>
@@ -97,7 +100,7 @@ export default function Home() {
                   </div>
                   <Link
                     href={`/blog/${post.slug}`}
-                    className='text-blue-600 dark:text-blue-400 hover:underline'
+                    className='text-primary hover:underline'
                   >
                     Read more →
                   </Link>
@@ -130,6 +133,7 @@ export default function Home() {
             </div>
           </div>
         </Container>
+    </>
       </Section>
     </div>
   );
