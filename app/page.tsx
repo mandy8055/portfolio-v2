@@ -20,7 +20,7 @@ export default function Home() {
   return (
     <div className='min-h-screen bg-white dark:bg-gray-950'>
       {/* Hero Section */}
-      <Section className='bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950'>
+      <Section className='bg-linear-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950'>
         <Container>
           <div className='text-center'>
             <h1 className='text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4'>
@@ -30,8 +30,10 @@ export default function Home() {
               {personalInfo.tagline}
             </p>
             <div className='flex gap-4 justify-center'>
-              <Button size="lg">View Projects</Button>
-              <Button variant="outline" size="lg">Contact Me</Button>
+              <Button size='lg'>View Projects</Button>
+              <Button variant='outline' size='lg'>
+                Contact Me
+              </Button>
             </div>
           </div>
         </Container>
@@ -55,7 +57,7 @@ export default function Home() {
                 <CardContent>
                   <div className='flex flex-wrap gap-2'>
                     {category.skills.slice(0, 5).map((skill) => (
-                      <Badge key={skill.name} variant="secondary">
+                      <Badge key={skill.name} variant='secondary'>
                         {skill.name}
                       </Badge>
                     ))}
@@ -88,12 +90,12 @@ export default function Home() {
                   </p>
                   <div className='flex flex-wrap gap-2 mb-4'>
                     {post.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className='px-2 py-1 text-xs bg-gray-200 dark:bg-gray-800 rounded'
-                      >Badge key={tag} variant="outline">
+                      <Badge key={tag} variant='outline'>
                         {tag}
-                      </Badge
+                      </Badge>
+                    ))}
+                  </div>
+                  <Link
                     href={`/blog/${post.slug}`}
                     className='text-blue-600 dark:text-blue-400 hover:underline'
                   >
