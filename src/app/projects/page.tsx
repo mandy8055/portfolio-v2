@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'motion/react';
 import { Container } from '@/components/ui/Container';
 import { Section, SectionTitle, SectionHeader } from '@/components/ui/Section';
 import {

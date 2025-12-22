@@ -6,15 +6,10 @@ import { personalInfo } from '@/data/personal';
 import { Button } from '@/components/ui/button';
 // Background Effects - Choose one or combine them!
 import { ParticlesBackground } from '@/components/backgrounds/ParticlesBackground';
-import { ShootingStars } from '@/components/backgrounds/ShootingStars';
-import { GridPattern } from '@/components/backgrounds/GridPattern';
-import { FloatingOrbs } from '@/components/backgrounds/FloatingOrbs';
-import { DotMatrix } from '@/components/backgrounds/DotMatrix';
-import { SpotlightEffect } from '@/components/backgrounds/SpotlightEffect';
 // Animations
 import { Typewriter } from '@/components/animations/Typewriter';
 import { GradientText } from '@/components/animations/GradientText';
-import { Github, Linkedin, Mail, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 export function EnhancedHero() {
   const roles = [
@@ -26,30 +21,9 @@ export function EnhancedHero() {
 
   return (
     <section className='relative min-h-screen flex items-center justify-center overflow-hidden'>
-      {/* 
-        🎨 BACKGROUND EFFECTS - Choose what you like!
-        Uncomment the ones you want to try:
-      */}
-
-      {/* Option 1: Particles (jsr.io style) */}
       <div className='absolute inset-0 z-0'>
         <ParticlesBackground />
       </div>
-
-      {/* Option 2: Grid Pattern (minimal, clean) */}
-      {/* <GridPattern /> */}
-
-      {/* Option 3: Floating Orbs (soft, modern) */}
-      {/* <FloatingOrbs /> */}
-
-      {/* Option 4: Dot Matrix (tech, cyberpunk) */}
-      {/* <DotMatrix /> */}
-
-      {/* Option 5: Spotlight Effect (elegant, smooth) */}
-      {/* <SpotlightEffect /> */}
-
-      {/* Shooting Stars (optional) */}
-      {/* <ShootingStars /> */}
 
       {/* Gradient Overlays - Reduced opacity to show particles */}
       <div className='absolute inset-0 bg-linear-to-b from-background/20 via-transparent to-background/40 pointer-events-none' />

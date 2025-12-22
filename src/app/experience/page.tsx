@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'motion/react';
 import { Container } from '@/components/ui/Container';
 import { Section, SectionTitle, SectionHeader } from '@/components/ui/Section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +25,7 @@ export default function ExperiencePage() {
 
           <div className='relative mt-12'>
             {/* Timeline line */}
-            <div className='absolute left-0 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-teal-500 via-cyan-500 to-emerald-500 md:-translate-x-px' />
+            <div className='absolute left-0 md:left-1/2 top-0 bottom-0 w-0.5 bg-linear-to-b from-teal-500 via-cyan-500 to-emerald-500 md:-translate-x-px' />
 
             {/* Experience items */}
             <div className='space-y-12'>
@@ -38,7 +37,7 @@ export default function ExperiencePage() {
                     }`}
                   >
                     {/* Timeline dot */}
-                    <div className='absolute left-0 md:left-1/2 top-8 w-4 h-4 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full border-4 border-background -translate-x-[7px] md:-translate-x-2 z-10' />
+                    <div className='absolute left-0 md:left-1/2 top-8 w-4 h-4 bg-linear-to-br from-teal-500 to-cyan-500 rounded-full border-4 border-background -translate-x-1.75 md:-translate-x-2 z-10' />
 
                     {/* Spacer for alternating layout */}
                     <div className='hidden md:block md:w-1/2' />
