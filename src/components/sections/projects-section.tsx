@@ -2,8 +2,12 @@
 
 import Link from 'next/link';
 import { projects } from '@/data/projects';
-import { Container } from '@/components/ui/container';
-import { Section, SectionTitle, SectionHeader } from '@/components/ui/section';
+import { Container } from '@/components/ui/custom-container';
+import {
+  Section,
+  SectionTitle,
+  SectionHeader,
+} from '@/components/ui/custom-section';
 import {
   Card,
   CardContent,
