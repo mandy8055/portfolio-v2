@@ -18,6 +18,7 @@ export function EnhancedHero() {
     'React/Next.js Expert',
     'Cloud Architect',
     'Tech Enthusiast',
+    'Open Source Evangelist',
   ];
 
   return (
