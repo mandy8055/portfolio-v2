@@ -1,7 +1,7 @@
-import { EnhancedHero } from '@/components/sections/EnhancedHero';
-import { AboutSection } from '@/components/sections/AboutSection';
-import { ProjectsSection } from '@/components/sections/ProjectsSection';
-import { ContactSection } from '@/components/sections/ContactSection';
+import { EnhancedHero } from '@/components/sections/enhanced-hero';
+import { AboutSection } from '@/components/sections/about-section';
+import { ProjectsSection } from '@/components/sections/projects-section';
+import { ContactSection } from '@/components/sections/contact-section';
 
 export default function Home() {
   return (

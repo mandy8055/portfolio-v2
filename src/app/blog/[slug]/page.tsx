@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { getAllBlogPosts, getBlogPost, getRelatedPosts } from '@/lib/blog';
-import { Container } from '@/components/ui/Container';
+import { Container } from '@/components/ui/container';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,

@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Container } from '@/components/ui/Container';
-import { Section, SectionTitle, SectionHeader } from '@/components/ui/Section';
+import { Container } from '@/components/ui/container';
+import { Section, SectionTitle, SectionHeader } from '@/components/ui/section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Mail, Send } from 'lucide-react';
-import { ScrollReveal } from '@/components/animations/ScrollReveal';
-import { GradientText } from '@/components/animations/GradientText';
+import { ScrollReveal } from '@/components/animations/scroll-reveal';
+import { GradientText } from '@/components/animations/gradient-text';
 
 export function ContactSection() {
   const [formData, setFormData] = useState({

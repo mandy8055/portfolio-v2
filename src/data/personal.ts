@@ -39,7 +39,7 @@ export const personalInfo: PersonalInfo = {
     {
       name: 'LeetCode',
       url: 'https://leetcode.com/mandy8055',
-      icon: 'Code2',
+      icon: 'LeetCode',
     },
   ],
   resume: '/resume-manuj-sankrit.pdf',
