@@ -7,44 +7,13 @@ import {
   SectionHeader,
 } from '@/components/ui/custom-section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Award, BookOpen, Trophy, Code2, Heart } from 'lucide-react';
+import { Award, BookOpen, Trophy, Heart } from 'lucide-react';
 import { aboutMe } from '@/data/personal';
 import { ScrollReveal } from '@/components/animations/scroll-reveal';
 import { GradientText } from '@/components/animations/gradient-text';
+import { SkillsShowcase } from '@/components/sections/skills-showcase';
 
 export default function AboutPage() {
-  const skills = {
-    frontend: [
-      'React',
-      'Next.js',
-      'TypeScript',
-      'JavaScript',
-      'HTML5',
-      'CSS3',
-      'Tailwind CSS',
-      'SASS',
-    ],
-    backend: [
-      'Node.js',
-      'Express',
-      'GraphQL',
-      'REST APIs',
-      'MongoDB',
-      'PostgreSQL',
-    ],
-    tools: [
-      'Git',
-      'Docker',
-      'AWS',
-      'CI/CD',
-      'Jest',
-      'Webpack',
-      'Vite',
-      'Figma',
-    ],
-  };
-
   return (
     <div className='min-h-screen bg-background pt-20'>
       <Section className='relative z-10'>
@@ -58,73 +27,8 @@ export default function AboutPage() {
             </p>
           </SectionHeader>
 
-          {/* Skills Section */}
-          <div className='mt-12'>
-            <h2 className='text-3xl font-bold text-center mb-8'>
-              <GradientText animate={false}>Skills & Expertise</GradientText>
-            </h2>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-              <ScrollReveal delay={0.1}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className='flex items-center gap-2'>
-                      <Code2 className='size-5 text-teal-500' />
-                      Frontend
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='flex flex-wrap gap-2'>
-                      {skills.frontend.map((skill) => (
-                        <Badge key={skill} variant='secondary'>
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </ScrollReveal>
-
-              <ScrollReveal delay={0.2}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className='flex items-center gap-2'>
-                      <Code2 className='size-5 text-cyan-500' />
-                      Backend
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='flex flex-wrap gap-2'>
-                      {skills.backend.map((skill) => (
-                        <Badge key={skill} variant='secondary'>
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </ScrollReveal>
-
-              <ScrollReveal delay={0.3}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className='flex items-center gap-2'>
-                      <Code2 className='size-5 text-emerald-500' />
-                      Tools & Others
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className='flex flex-wrap gap-2'>
-                      {skills.tools.map((skill) => (
-                        <Badge key={skill} variant='secondary'>
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </ScrollReveal>
-            </div>
-          </div>
+          {/* Skills Showcase */}
+          <SkillsShowcase />
 
           {/* Highlights, Certifications, Awards */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mt-12'>

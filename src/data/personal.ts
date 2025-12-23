@@ -1,7 +1,7 @@
 export interface SocialLink {
   name: string;
   url: string;
-  icon: string; // Lucide icon name
+  icon: string;
 }
 
 export interface PersonalInfo {
@@ -16,8 +16,8 @@ export interface PersonalInfo {
 
 export const personalInfo: PersonalInfo = {
   name: 'Manuj Sankrit',
-  role: 'UI Lead',
-  tagline: 'UI Lead at Publicis Sapient | React & Next.js Expert',
+  role: 'Senior Software Engineer',
+  tagline: 'Senior Software Engineer at B/S/H',
   email: 'msankrit8055@gmail.com',
   location: 'India',
   social: [
@@ -28,7 +28,7 @@ export const personalInfo: PersonalInfo = {
     },
     {
       name: 'X',
-      url: 'https://www.linkedin.com/in/manuj-sankrit-b82175117',
+      url: 'https://x.com/mandy8055',
       icon: 'X',
     },
     {
@@ -47,15 +47,12 @@ export const personalInfo: PersonalInfo = {
 
 // About Me Content
 export const aboutMe = {
-  bio: `Seasoned UI Lead at Publicis Sapient with expertise in building scalable, performant web applications. 
-  Passionate about React, Next.js, and modern web technologies. Arctic Code Vault Contributor and GATE qualified 
-  with multiple certifications in AWS, Oracle Java, and Web Performance.`,
+  bio: `Part student, part athlete, part programmer - I'm not just switching roles, I'm debugging life's challenges one commit at a time. Architecting and designing scalable solutions with React & Next.js, while orchestrating CI/CD pipelines and Docker systems. Open-source evangelist and a lifelong learner who codes by day and conquers challenges by night.`,
 
   highlights: [
     'Arctic Code Vault Contributor (GitHub Archive Program)',
     'GATE Qualified (Computer Science & Engineering)',
-    'Gold Medalist in B.Tech',
-    'JEE Cleared',
+    'Cracked JEE',
     'State-level Swimming Championship Medalist',
   ],
 
@@ -134,8 +131,8 @@ export const aboutMe = {
   education: [
     {
       degree: 'B.Tech in Computer Science & Engineering',
-      institution: 'Gold Medalist',
-      achievement: 'GATE Qualified, JEE Cleared',
+      institution: 'DIT University',
+      achievement: 'GATE Qualified',
     },
   ],
 };

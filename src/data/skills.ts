@@ -6,99 +6,252 @@ export interface SkillCategory {
 export interface Skill {
   name: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
-  icon?: string; // Lucide icon name or custom icon path
-  color?: string; // Tailwind color class
+  logo: string;
+  logoLight?: string; // Optional light theme variant
 }
 
+// All skills in a flat array for the showcase
+export const allSkills: Skill[] = [
+  // Frontend & Languages
+  {
+    name: 'JavaScript',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg',
+  },
+  {
+    name: 'TypeScript',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg',
+  },
+  {
+    name: 'React',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg',
+  },
+  {
+    name: 'Next.js',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original.svg',
+  },
+  {
+    name: 'HTML5',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg',
+  },
+  {
+    name: 'CSS3',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg',
+  },
+  {
+    name: 'Tailwind CSS',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg',
+  },
+  {
+    name: 'Redux',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/redux/redux-original.svg',
+  },
+
+  // Backend & Languages
+  {
+    name: 'Node.js',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg',
+  },
+  {
+    name: 'Java',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original.svg',
+  },
+  {
+    name: 'Python',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg',
+  },
+
+  // Databases
+  // {
+  //   name: 'MongoDB',
+  //   level: 'Beginner',
+  //   logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mongodb/mongodb-original.svg',
+  // },
+  {
+    name: 'PostgreSQL',
+    level: 'Beginner',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg',
+  },
+  {
+    name: 'MySQL',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mysql/mysql-original.svg',
+  },
+
+  // Cloud & DevOps
+  {
+    name: 'AWS',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-original-wordmark.svg',
+  },
+  {
+    name: 'Azure',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/azure/azure-original.svg',
+  },
+  {
+    name: 'Docker',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original.svg',
+  },
+  {
+    name: 'Git',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg',
+  },
+  {
+    name: 'GitHub Actions',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/githubactions/githubactions-original.svg',
+  },
+
+  // Testing & Tools
+  {
+    name: 'Vitest',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitest/vitest-original.svg',
+  },
+  {
+    name: 'Playwright',
+    level: 'Beginner',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/playwright/playwright-original.svg',
+  },
+
+  // Build Tools & Others
+  {
+    name: 'Webpack',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/webpack/webpack-original.svg',
+  },
+  {
+    name: 'Vite',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitejs/vitejs-original.svg',
+  },
+  {
+    name: 'npm',
+    level: 'Expert',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/npm/npm-original-wordmark.svg',
+  },
+  {
+    name: 'pnpm',
+    level: 'Expert',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/pnpm/pnpm-original.svg',
+  },
+  {
+    name: 'yarn',
+    level: 'Expert',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/yarn/yarn-original.svg',
+  },
+  {
+    name: 'VS Code',
+    level: 'Expert',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vscode/vscode-original.svg',
+  },
+  {
+    name: 'IntelliJ',
+    level: 'Beginner',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/intellij/intellij-original.svg',
+  },
+  {
+    name: 'Pycharm',
+    level: 'Expert',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/pycharm/pycharm-original.svg',
+  },
+  {
+    name: 'Figma',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/figma/figma-original.svg',
+  },
+  {
+    name: 'Storybook',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/storybook/storybook-original.svg',
+  },
+  {
+    name: 'Linux',
+    level: 'Advanced',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/linux/linux-original.svg',
+  },
+  {
+    name: 'GraphQL',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/graphql/graphql-plain.svg',
+  },
+  {
+    name: 'Datadog',
+    level: 'Intermediate',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/datadog/datadog-original.svg',
+  },
+  // {
+  //   name: 'Sass',
+  //   level: 'Intermediate',
+  //   logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sass/sass-original.svg',
+  // },
+];
+
+// Categorized skills for backward compatibility
 export const skillCategories: SkillCategory[] = [
   {
     name: 'Frontend Development',
-    skills: [
-      { name: 'JavaScript', level: 'Expert', icon: 'Code2', color: 'yellow' },
-      { name: 'TypeScript', level: 'Expert', icon: 'FileCode2', color: 'blue' },
-      { name: 'React', level: 'Expert', icon: 'Atom', color: 'cyan' },
-      { name: 'Next.js', level: 'Expert', icon: 'Triangle', color: 'black' },
-      {
-        name: 'React Native',
-        level: 'Advanced',
-        icon: 'Smartphone',
-        color: 'cyan',
-      },
-      { name: 'Redux', level: 'Advanced', icon: 'Layers', color: 'purple' },
-      { name: 'HTML/CSS', level: 'Expert', icon: 'Code', color: 'orange' },
-      { name: 'Tailwind CSS', level: 'Expert', icon: 'Wind', color: 'cyan' },
-      {
-        name: 'Framer Motion',
-        level: 'Advanced',
-        icon: 'Sparkles',
-        color: 'pink',
-      },
-    ],
+    skills: allSkills.filter((s) =>
+      [
+        'JavaScript',
+        'TypeScript',
+        'React',
+        'Next.js',
+        'HTML5',
+        'CSS3',
+        'Tailwind CSS',
+        'Redux',
+        'React Native',
+        'Sass',
+      ].includes(s.name),
+    ),
   },
   {
     name: 'Backend Development',
-    skills: [
-      { name: 'Node.js', level: 'Advanced', icon: 'Server', color: 'green' },
-      { name: 'Express', level: 'Advanced', icon: 'Zap', color: 'gray' },
-      { name: 'Java', level: 'Advanced', icon: 'Coffee', color: 'red' },
-    ],
+    skills: allSkills.filter((s) =>
+      ['Node.js', 'Express', 'Java', 'GraphQL'].includes(s.name),
+    ),
+  },
+  {
+    name: 'Databases',
+    skills: allSkills.filter((s) =>
+      ['MongoDB', 'PostgreSQL', 'MySQL'].includes(s.name),
+    ),
   },
   {
     name: 'Cloud & DevOps',
-    skills: [
-      { name: 'AWS', level: 'Intermediate', icon: 'Cloud', color: 'orange' },
-      { name: 'Azure', level: 'Intermediate', icon: 'CloudCog', color: 'blue' },
-      {
-        name: 'Docker',
-        level: 'Intermediate',
-        icon: 'Container',
-        color: 'blue',
-      },
-      { name: 'Git', level: 'Advanced', icon: 'GitBranch', color: 'orange' },
-      {
-        name: 'GitHub Actions',
-        level: 'Intermediate',
-        icon: 'GitCommit',
-        color: 'gray',
-      },
-    ],
+    skills: allSkills.filter((s) =>
+      ['AWS', 'Azure', 'Docker', 'Git', 'GitHub', 'GitHub Actions'].includes(
+        s.name,
+      ),
+    ),
   },
   {
     name: 'Testing & Quality',
-    skills: [
-      { name: 'Jest', level: 'Advanced', icon: 'TestTube', color: 'red' },
-      { name: 'Cypress', level: 'Advanced', icon: 'Bug', color: 'green' },
-      {
-        name: 'React Testing Library',
-        level: 'Advanced',
-        icon: 'FlaskConical',
-        color: 'red',
-      },
-      {
-        name: 'Web Performance',
-        level: 'Expert',
-        icon: 'Gauge',
-        color: 'green',
-      },
-    ],
+    skills: allSkills.filter((s) =>
+      ['Jest', 'Vitest', 'Cypress'].includes(s.name),
+    ),
   },
   {
-    name: 'Programming Languages',
-    skills: [
-      { name: 'C', level: 'Intermediate', icon: 'Code2', color: 'blue' },
-      { name: 'Java', level: 'Advanced', icon: 'Coffee', color: 'red' },
-      { name: 'JavaScript', level: 'Expert', icon: 'Braces', color: 'yellow' },
-      { name: 'TypeScript', level: 'Expert', icon: 'FileCode2', color: 'blue' },
-    ],
-  },
-  {
-    name: 'Tools & Others',
-    skills: [
-      { name: 'Linux', level: 'Advanced', icon: 'Terminal', color: 'gray' },
-      { name: 'VS Code', level: 'Expert', icon: 'Code', color: 'blue' },
-      { name: 'Figma', level: 'Intermediate', icon: 'Figma', color: 'purple' },
-      { name: 'Biome', level: 'Advanced', icon: 'Sparkles', color: 'yellow' },
-    ],
+    name: 'Tools & Build',
+    skills: allSkills.filter((s) =>
+      ['Webpack', 'Vite', 'npm', 'pnpm', 'VS Code', 'Figma', 'Linux'].includes(
+        s.name,
+      ),
+    ),
   },
 ];
 
