@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Container } from '@/components/ui/Container';
-import { Section, SectionTitle, SectionHeader } from '@/components/ui/Section';
+import { Container } from '@/components/ui/container';
+import { Section, SectionTitle, SectionHeader } from '@/components/ui/section';
 import {
   Card,
   CardContent,
@@ -12,10 +12,11 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Github } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { projects } from '@/data/projects';
-import { ScrollReveal } from '@/components/animations/ScrollReveal';
-import { GradientText } from '@/components/animations/GradientText';
+import { SimpleIcon } from '@/components/ui/simple-icon';
+import { ScrollReveal } from '@/components/animations/scroll-reveal';
+import { GradientText } from '@/components/animations/gradient-text';
 
 export default function ProjectsPage() {
   const [filter, setFilter] = useState<string>('all');
@@ -97,7 +98,7 @@ export default function ProjectsPage() {
                             target='_blank'
                             rel='noopener noreferrer'
                           >
-                            <Github className='size-4 mr-2' />
+                            <SimpleIcon icon='Github' className='size-4 mr-2' />
                             Code
                           </a>
                         </Button>

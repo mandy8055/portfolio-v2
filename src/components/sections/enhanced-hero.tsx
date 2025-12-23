@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { personalInfo } from '@/data/personal';
 import { Button } from '@/components/ui/button';
 // Background Effects - Choose one or combine them!
-import { ParticlesBackground } from '@/components/backgrounds/ParticlesBackground';
+import { ParticlesBackground } from '@/components/backgrounds/particles-background';
 // Animations
-import { Typewriter } from '@/components/animations/Typewriter';
-import { GradientText } from '@/components/animations/GradientText';
+
+import { GradientText } from '@/components/animations/gradient-text';
 import { FileText } from 'lucide-react';
+import { Typewriter } from '@/components/animations/typewriter';
 
 export function EnhancedHero() {
   const roles = [

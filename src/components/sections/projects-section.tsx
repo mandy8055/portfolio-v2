@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { projects } from '@/data/projects';
-import { Container } from '@/components/ui/Container';
-import { Section, SectionTitle, SectionHeader } from '@/components/ui/Section';
+import { Container } from '@/components/ui/container';
+import { Section, SectionTitle, SectionHeader } from '@/components/ui/section';
 import {
   Card,
   CardContent,
@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Github, ArrowRight } from 'lucide-react';
-import { ScrollReveal } from '@/components/animations/ScrollReveal';
-import { GradientText } from '@/components/animations/GradientText';
+import { ExternalLink, ArrowRight } from 'lucide-react';
+import { ScrollReveal } from '@/components/animations/scroll-reveal';
+import { SimpleIcon } from '@/components/ui/simple-icon';
+import { GradientText } from '@/components/animations/gradient-text';
 
 export function ProjectsSection() {
   const featuredProjects = projects.filter((p) => p.featured).slice(0, 3);
@@ -59,7 +60,7 @@ export function ProjectsSection() {
                           target='_blank'
                           rel='noopener noreferrer'
                         >
-                          <Github className='size-4 mr-2' />
+                          <SimpleIcon icon='Github' className='size-4 mr-2' />
                           Code
                         </a>
                       </Button>

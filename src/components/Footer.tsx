@@ -3,35 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { personalInfo } from '@/data/personal';
-import { siGithub, siX, siStackoverflow, siLeetcode } from 'simple-icons';
 import { ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-interface SimpleIconProps {
-  path: string;
-  className?: string;
-}
-
-function SimpleIcon({ path, className }: SimpleIconProps) {
-  return (
-    <svg
-      role='img'
-      viewBox='0 0 24 24'
-      xmlns='http://www.w3.org/2000/svg'
-      fill='currentColor'
-      className={className}
-    >
-      <path d={path} />
-    </svg>
-  );
-}
-
-const iconMap: Record<string, any> = {
-  Github: siGithub,
-  X: siX,
-  Code2: siLeetcode,
-  StackOverflow: siStackoverflow,
-};
+import { SimpleIcon } from '@/components/ui/simple-icon';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -116,23 +90,18 @@ export function Footer() {
           <div>
             <h4 className='font-semibold mb-4'>Connect</h4>
             <div className='flex gap-4 mb-4'>
-              {personalInfo.social.map((social) => {
-                const icon = iconMap[social.icon];
-                if (!icon) return null;
-
-                return (
-                  <Link
-                    key={social.name}
-                    href={social.url}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='text-foreground/60 hover:text-teal-500 transition-all hover:-translate-y-1 transform duration-200'
-                    aria-label={social.name}
-                  >
-                    <SimpleIcon path={icon.path} className='size-5' />
-                  </Link>
-                );
-              })}
+              {personalInfo.social.map((social) => (
+                <Link
+                  key={social.name}
+                  href={social.url}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-foreground/60 hover:text-teal-500 transition-all hover:-translate-y-1 transform duration-200'
+                  aria-label={social.name}
+                >
+                  <SimpleIcon icon={social.icon} className='size-5' />
+                </Link>
+              ))}
             </div>
             <p className='text-sm text-muted-foreground'>
               Email:{' '}
@@ -151,7 +120,7 @@ export function Footer() {
           <Button
             onClick={scrollToTop}
             size='icon'
-            className='fixed bottom-8 right-8 z-50 rounded-full shadow-lg bg-teal-500 hover:bg-teal-600 text-white'
+            className='cursor-pointer fixed bottom-8 right-8 z-50 rounded-full shadow-lg bg-teal-500 hover:bg-teal-600 text-white'
             aria-label='Scroll to top'
           >
             <ArrowUp className='size-5' />

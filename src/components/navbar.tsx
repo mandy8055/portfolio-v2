@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Container } from '@/components/ui/Container';
+import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import { personalInfo } from '@/data/personal';
 

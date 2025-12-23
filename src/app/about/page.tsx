@@ -1,13 +1,13 @@
 'use client';
 
-import { Container } from '@/components/ui/Container';
-import { Section, SectionTitle, SectionHeader } from '@/components/ui/Section';
+import { Container } from '@/components/ui/container';
+import { Section, SectionTitle, SectionHeader } from '@/components/ui/section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Award, BookOpen, Trophy, Code2, Heart } from 'lucide-react';
 import { aboutMe } from '@/data/personal';
-import { ScrollReveal } from '@/components/animations/ScrollReveal';
-import { GradientText } from '@/components/animations/GradientText';
+import { ScrollReveal } from '@/components/animations/scroll-reveal';
+import { GradientText } from '@/components/animations/gradient-text';
 
 export default function AboutPage() {
   const skills = {
