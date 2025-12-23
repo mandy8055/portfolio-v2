@@ -1,5 +1,5 @@
 import { getAllBlogPosts, getAllTags } from '@/lib/blog';
-import { Container } from '@/components/ui/container';
+import { Container } from '@/components/ui/custom-container';
 import { BlogList } from '@/components/blog/blog-list';
 
 export default function BlogPage() {

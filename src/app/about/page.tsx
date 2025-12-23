@@ -1,7 +1,11 @@
 'use client';
 
-import { Container } from '@/components/ui/container';
-import { Section, SectionTitle, SectionHeader } from '@/components/ui/section';
+import { Container } from '@/components/ui/custom-container';
+import {
+  Section,
+  SectionTitle,
+  SectionHeader,
+} from '@/components/ui/custom-section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Award, BookOpen, Trophy, Code2, Heart } from 'lucide-react';

@@ -10,7 +10,7 @@ import { ParticlesBackground } from '@/components/backgrounds/particles-backgrou
 
 import { GradientText } from '@/components/animations/gradient-text';
 import { FileText } from 'lucide-react';
-import { Typewriter } from '@/components/animations/typewriter';
+import { Typewriter } from '@/components/animations/typewriter-effect';
 
 export function EnhancedHero() {
   const roles = [
