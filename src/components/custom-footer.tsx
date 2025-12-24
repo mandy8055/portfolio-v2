@@ -133,7 +133,7 @@ export function Footer() {
               © {currentYear} {personalInfo.name}. All rights reserved.
             </p>
             <p className='text-sm text-muted-foreground'>
-              Built with 💜 using{' '}
+              Built with ❤️ using{' '}
               <span className='text-foreground font-medium'>Next.js</span> &{' '}
               <span className='text-foreground font-medium'>Tailwind CSS</span>
             </p>
