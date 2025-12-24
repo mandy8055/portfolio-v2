@@ -16,7 +16,7 @@ export function GradientText({
   if (!animate) {
     return (
       <span
-        className={`bg-linear-to-r from-theme-primary via-theme-secondary to-theme-tertiary bg-clip-text text-transparent ${className}`}
+        className={`bg-linear-to-r from-theme-primary via-theme-secondary to-theme-tertiary bg-clip-text text-transparent leading-tight pb-2 ${className}`}
       >
         {children}
       </span>
@@ -25,7 +25,7 @@ export function GradientText({
 
   return (
     <motion.span
-      className={`inline-block bg-linear-to-r from-theme-primary via-theme-secondary to-theme-tertiary bg-clip-text text-transparent ${className}`}
+      className={`inline-block bg-linear-to-r from-theme-primary via-theme-secondary to-theme-tertiary bg-clip-text text-transparent leading-tight pb-2 ${className}`}
       style={{
         backgroundSize: '200% auto',
       }}

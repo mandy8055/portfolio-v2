@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Navbar } from '@/components/navbar';
 import { SocialSidebar } from '@/components/social-sidebar';
+import { ConsoleGraffiti } from '@/components/console-graffiti';
 import './globals.css';
 import { Footer } from '@/components/custom-footer';
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ConsoleGraffiti />
           <Navbar />
           <SocialSidebar />
           {children}
