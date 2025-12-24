@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Particles, {
   initParticlesEngine,
   type IParticlesProps,
@@ -10,11 +10,19 @@ import { useTheme } from 'next-themes';
 
 export function ParticlesBackground() {
   const { theme } = useTheme();
+  const [colors, setColors] = useState(['#f97316', '#fb923c', '#fbbf24']);
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
     });
+
+    // Read theme colors from CSS variables once on mount
+    const computedStyle = getComputedStyle(document.documentElement);
+    const primary = computedStyle.getPropertyValue('--theme-primary').trim() || '#f97316';
+    const secondary = computedStyle.getPropertyValue('--theme-secondary').trim() || '#fb923c';
+    const tertiary = computedStyle.getPropertyValue('--theme-tertiary').trim() || '#fbbf24';
+    setColors([primary, secondary, tertiary]);
   }, []);
 
   const options: IParticlesProps['options'] = {
@@ -45,7 +53,7 @@ export function ParticlesBackground() {
     },
     particles: {
       color: {
-        value: ['#14B8A6', '#06B6D4', '#0EA5E9', '#10B981', '#22D3EE'],
+        value: colors,
       },
       links: {
         color: theme === 'dark' ? '#ffffff' : '#1a1a1a',

@@ -29,7 +29,7 @@ export default function ExperiencePage() {
 
           <div className='relative mt-12'>
             {/* Timeline line */}
-            <div className='absolute left-0 md:left-1/2 top-0 bottom-0 w-0.5 bg-linear-to-b from-teal-500 via-cyan-500 to-emerald-500 md:-translate-x-px' />
+            <div className='absolute left-0 md:left-1/2 top-0 bottom-0 w-0.5 bg-linear-to-b from-theme-primary via-theme-secondary to-theme-tertiary md:-translate-x-px' />
 
             {/* Experience items */}
             <div className='space-y-12'>
@@ -41,7 +41,7 @@ export default function ExperiencePage() {
                     }`}
                   >
                     {/* Timeline dot */}
-                    <div className='absolute left-0 md:left-1/2 top-8 w-4 h-4 bg-linear-to-br from-teal-500 to-cyan-500 rounded-full border-4 border-background -translate-x-1.75 md:-translate-x-2 z-10' />
+                    <div className='absolute left-0 md:left-1/2 top-8 w-4 h-4 bg-linear-to-br from-theme-primary to-theme-secondary rounded-full border-4 border-background -translate-x-1.75 md:-translate-x-2 z-10' />
 
                     {/* Spacer for alternating layout */}
                     <div className='hidden md:block md:w-1/2' />
@@ -92,7 +92,7 @@ export default function ExperiencePage() {
                                   key={idx}
                                   className='flex items-start gap-2 text-sm'
                                 >
-                                  <span className='text-teal-500 mt-1'>•</span>
+                                  <span className='text-theme-primary mt-1'>•</span>
                                   <span>{highlight}</span>
                                 </li>
                               ))}
@@ -133,7 +133,7 @@ export default function ExperiencePage() {
                   <Card>
                     <CardHeader>
                       <CardTitle className='flex items-center gap-2'>
-                        <Briefcase className='size-5 text-teal-500' />
+                        <Briefcase className='size-5 text-theme-primary' />
                         {edu.degree}
                       </CardTitle>
                     </CardHeader>
