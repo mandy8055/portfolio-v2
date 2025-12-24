@@ -14,7 +14,7 @@ export function SocialSidebar() {
             href={social.url}
             target='_blank'
             rel='noopener noreferrer'
-            className='text-foreground/60 hover:text-teal-500 transition-all hover:-translate-y-1 hover:scale-110 transform duration-200'
+            className='text-foreground/60 hover:text-theme-primary transition-all hover:-translate-y-1 hover:scale-110 transform duration-200'
             aria-label={social.name}
           >
             <SimpleIcon icon={social.icon} className='size-6' />

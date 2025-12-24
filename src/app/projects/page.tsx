@@ -74,9 +74,9 @@ export default function ProjectsPage() {
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
             {filteredProjects.map((project, index) => (
               <ScrollReveal key={project.title} delay={index * 0.05}>
-                <Card className='h-full flex flex-col group hover:shadow-xl hover:shadow-teal-500/5 transition-all duration-300 hover:scale-[1.02]'>
+                <Card className='h-full flex flex-col group hover:shadow-xl hover:shadow-theme-primary/5 transition-all duration-300 hover:scale-[1.02]'>
                   <CardHeader>
-                    <CardTitle className='group-hover:text-teal-500 transition-colors'>
+                    <CardTitle className='group-hover:text-theme-primary transition-colors'>
                       {project.title}
                     </CardTitle>
                     <CardDescription>{project.description}</CardDescription>

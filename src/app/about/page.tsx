@@ -37,7 +37,7 @@ export default function AboutPage() {
               <Card className='h-full'>
                 <CardHeader>
                   <CardTitle className='flex items-center gap-2'>
-                    <Trophy className='size-5 text-teal-500' />
+                    <Trophy className='size-5 text-theme-primary' />
                     Highlights & Achievements
                   </CardTitle>
                 </CardHeader>
@@ -48,7 +48,7 @@ export default function AboutPage() {
                         key={highlight}
                         className='flex items-start gap-2 text-sm'
                       >
-                        <span className='text-teal-500 mt-1'>•</span>
+                        <span className='text-theme-primary mt-1'>•</span>
                         <span>{highlight}</span>
                       </li>
                     ))}
@@ -62,7 +62,7 @@ export default function AboutPage() {
               <Card className='h-full'>
                 <CardHeader>
                   <CardTitle className='flex items-center gap-2'>
-                    <Award className='size-5 text-cyan-500' />
+                    <Award className='size-5 text-theme-secondary' />
                     Certifications
                   </CardTitle>
                 </CardHeader>
@@ -70,7 +70,7 @@ export default function AboutPage() {
                   <ul className='space-y-2'>
                     {aboutMe.certifications.map((cert) => (
                       <li key={cert} className='flex items-start gap-2 text-sm'>
-                        <span className='text-cyan-500 mt-1'>•</span>
+                        <span className='text-theme-secondary mt-1'>•</span>
                         <span>{cert}</span>
                       </li>
                     ))}
@@ -84,7 +84,7 @@ export default function AboutPage() {
               <Card className='h-full'>
                 <CardHeader>
                   <CardTitle className='flex items-center gap-2'>
-                    <Trophy className='size-5 text-emerald-500' />
+                    <Trophy className='size-5 text-theme-tertiary' />
                     Awards
                   </CardTitle>
                 </CardHeader>
@@ -140,7 +140,7 @@ export default function AboutPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle className='flex items-center gap-2'>
-                        <BookOpen className='size-5 text-teal-500' />
+                        <BookOpen className='size-5 text-theme-primary' />
                         {edu.degree}
                       </CardTitle>
                     </CardHeader>

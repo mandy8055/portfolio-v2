@@ -46,7 +46,7 @@ export function Footer() {
               <li>
                 <Link
                   href='/about'
-                  className='text-sm text-muted-foreground hover:text-teal-500 transition-colors'
+                  className='text-sm text-muted-foreground hover:text-theme-primary transition-colors'
                 >
                   About
                 </Link>
@@ -54,7 +54,7 @@ export function Footer() {
               <li>
                 <Link
                   href='/experience'
-                  className='text-sm text-muted-foreground hover:text-teal-500 transition-colors'
+                  className='text-sm text-muted-foreground hover:text-theme-primary transition-colors'
                 >
                   Experience
                 </Link>
@@ -62,7 +62,7 @@ export function Footer() {
               <li>
                 <Link
                   href='/projects'
-                  className='text-sm text-muted-foreground hover:text-teal-500 transition-colors'
+                  className='text-sm text-muted-foreground hover:text-theme-primary transition-colors'
                 >
                   Projects
                 </Link>
@@ -70,7 +70,7 @@ export function Footer() {
               <li>
                 <Link
                   href='/blog'
-                  className='text-sm text-muted-foreground hover:text-teal-500 transition-colors'
+                  className='text-sm text-muted-foreground hover:text-theme-primary transition-colors'
                 >
                   Blog
                 </Link>
@@ -78,7 +78,7 @@ export function Footer() {
               <li>
                 <Link
                   href='/#contact'
-                  className='text-sm text-muted-foreground hover:text-teal-500 transition-colors'
+                  className='text-sm text-muted-foreground hover:text-theme-primary transition-colors'
                 >
                   Contact
                 </Link>
@@ -96,7 +96,7 @@ export function Footer() {
                   href={social.url}
                   target='_blank'
                   rel='noopener noreferrer'
-                  className='text-foreground/60 hover:text-teal-500 transition-all hover:-translate-y-1 transform duration-200'
+                  className='text-foreground/60 hover:text-theme-primary transition-all hover:-translate-y-1 transform duration-200'
                   aria-label={social.name}
                 >
                   <SimpleIcon icon={social.icon} className='size-5' />
@@ -107,7 +107,7 @@ export function Footer() {
               Email:{' '}
               <a
                 href={`mailto:${personalInfo.email}`}
-                className='hover:text-teal-500 transition-colors'
+                className='hover:text-theme-primary transition-colors'
               >
                 {personalInfo.email}
               </a>
@@ -120,7 +120,7 @@ export function Footer() {
           <Button
             onClick={scrollToTop}
             size='icon'
-            className='cursor-pointer fixed bottom-8 right-8 z-50 rounded-full shadow-lg bg-teal-500 hover:bg-teal-600 text-white'
+            className='cursor-pointer fixed bottom-8 right-8 z-50 rounded-full shadow-lg bg-theme-primary hover:bg-theme-primary-hover text-white'
             aria-label='Scroll to top'
           >
             <ArrowUp className='size-5' />

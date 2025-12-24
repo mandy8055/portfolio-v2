@@ -29,7 +29,7 @@ export function EnhancedHero() {
 
       {/* Gradient Overlays - Reduced opacity to show particles */}
       <div className='absolute inset-0 bg-linear-to-b from-background/20 via-transparent to-background/40 pointer-events-none' />
-      <div className='absolute inset-0 bg-linear-to-r from-teal-500/3 via-cyan-500/2 to-emerald-500/3 pointer-events-none' />
+      <div className='absolute inset-0 bg-linear-to-r from-theme-primary/3 via-theme-secondary/2 to-theme-tertiary/3 pointer-events-none' />
 
       {/* Content */}
       <div className='container mx-auto px-4 relative z-10'>
