@@ -2,9 +2,8 @@
 
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { personalInfo } from '@/data/personal';
+import { personalInfo, roles } from '@/data/personal';
 import { Button } from '@/components/ui/button';
-// Background Effects - Choose one or combine them!
 import { ParticlesBackground } from '@/components/backgrounds/particles-background';
 // Animations
 
@@ -13,21 +12,13 @@ import { FileText } from 'lucide-react';
 import { Typewriter } from '@/components/animations/typewriter-effect';
 
 export function EnhancedHero() {
-  const roles = [
-    'Full Stack Developer',
-    'React/Next.js Expert',
-    'Cloud Architect',
-    'Tech Enthusiast',
-    'Open Source Evangelist',
-  ];
-
   return (
     <section className='relative min-h-screen flex items-center justify-center overflow-hidden'>
       <div className='absolute inset-0 z-0'>
         <ParticlesBackground />
       </div>
 
-      {/* Gradient Overlays - Reduced opacity to show particles */}
+      {/* Gradient Overlays */}
       <div className='absolute inset-0 bg-linear-to-b from-background/20 via-transparent to-background/40 pointer-events-none' />
       <div className='absolute inset-0 bg-linear-to-r from-theme-primary/3 via-theme-secondary/2 to-theme-tertiary/3 pointer-events-none' />
 
@@ -49,7 +40,7 @@ export function EnhancedHero() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className='text-5xl md:text-7xl lg:text-8xl font-bold mb-6'
+            className='text-5xl md:text-7xl lg:text-8xl font-bold mb-6 overflow-visible'
           >
             <GradientText animate={true}>{personalInfo.name}</GradientText>
           </motion.h1>

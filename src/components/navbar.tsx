@@ -1,32 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Container } from '@/components/ui/custom-container';
 import { Button } from '@/components/ui/button';
 import { personalInfo } from '@/data/personal';
 
 export function Navbar() {
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    if (pathname !== '/') {
-      router.push('/#contact');
-      setTimeout(() => {
-        document
-          .getElementById('contact')
-          ?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      document
-        .getElementById('contact')
-        ?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <nav className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-sm'>
       <Container>
@@ -69,15 +49,6 @@ export function Navbar() {
                 Blog
                 <span className='absolute -bottom-1 left-0 w-0 h-0.5 bg-theme-primary transition-all group-hover:w-full'></span>
               </Link> */}
-
-              <a
-                href='#contact'
-                onClick={handleContactClick}
-                className='text-sm font-medium text-muted-foreground hover:text-theme-primary transition-colors cursor-pointer relative group'
-              >
-                Contact
-                <span className='absolute -bottom-1 left-0 w-0 h-0.5 bg-theme-primary transition-all group-hover:w-full'></span>
-              </a>
             </div>
           </div>
           <div className='flex items-center gap-2'>

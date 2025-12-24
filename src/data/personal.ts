@@ -27,6 +27,11 @@ export const personalInfo: PersonalInfo = {
       icon: 'Github',
     },
     {
+      name: 'LinkedIn',
+      url: 'https://www.linkedin.com/in/manuj-sankrit-b82175117/',
+      icon: 'LinkedIn',
+    },
+    {
       name: 'X',
       url: 'https://x.com/mandy8055',
       icon: 'X',
@@ -52,7 +57,7 @@ export const aboutMe = {
   highlights: [
     'Arctic Code Vault Contributor (GitHub Archive Program)',
     'GATE Qualified (Computer Science & Engineering)',
-    'Cracked JEE',
+    'Cracked JEE Mains',
     'State-level Swimming Championship Medalist',
   ],
 
@@ -136,3 +141,11 @@ export const aboutMe = {
     },
   ],
 };
+
+export const roles = [
+  'Full Stack Developer',
+  'React/Next.js Expert',
+  'Cloud Architect',
+  'Tech Enthusiast',
+  'Open Source Evangelist',
+];

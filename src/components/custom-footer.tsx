@@ -35,7 +35,8 @@ export function Footer() {
               {personalInfo.tagline}
             </p>
             <p className='text-muted-foreground text-sm'>
-              Building exceptional web experiences with modern technologies.
+              Debugging life one commit at a time. Part student, part athlete,
+              full-time problem solver. ⚡
             </p>
           </div>
 
@@ -67,22 +68,14 @@ export function Footer() {
                   Projects
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   href='/blog'
                   className='text-sm text-muted-foreground hover:text-theme-primary transition-colors'
                 >
                   Blog
                 </Link>
-              </li>
-              <li>
-                <Link
-                  href='/#contact'
-                  className='text-sm text-muted-foreground hover:text-theme-primary transition-colors'
-                >
-                  Contact
-                </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 

@@ -1,7 +1,6 @@
 import { EnhancedHero } from '@/components/sections/enhanced-hero';
 import { AboutSection } from '@/components/sections/about-section';
 import { ProjectsSection } from '@/components/sections/projects-section';
-import { ContactSection } from '@/components/sections/contact-section';
 
 export default function Home() {
   return (
@@ -12,7 +11,6 @@ export default function Home() {
       {/* Main Sections */}
       <AboutSection />
       <ProjectsSection />
-      <ContactSection />
     </div>
   );
 }
