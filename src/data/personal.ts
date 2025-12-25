@@ -18,7 +18,7 @@ export const personalInfo: PersonalInfo = {
   name: 'Manuj Sankrit',
   role: 'Senior Software Engineer',
   tagline: 'Senior Software Engineer at B/S/H',
-  email: 'msankrit8055@gmail.com',
+  email: 'manuj.sankrit1996@gmail.com',
   location: 'India',
   social: [
     {
@@ -56,33 +56,33 @@ export const aboutMe = {
 
   highlights: [
     'Arctic Code Vault Contributor (GitHub Archive Program)',
-    'GATE Qualified (Computer Science & Engineering)',
-    'Cracked JEE Mains',
+    '2x GATE Exam Qualifier (2020, 2021)',
+    'Active Stack Overflow Contributor (6.8k+ rep)',
     'State-level Swimming Championship Medalist',
   ],
 
   certifications: [
-    'AWS Certified Cloud Practitioner',
-    'Non-Functional Requirements Web Specialist',
-    'Oracle Certified Professional: Java SE Programmer',
-    'HackerRank Certified',
+    'AWS Certified Cloud Practitioner (08/2023 - 08/2026)',
+    'NFR Web Specialist L1 (05/2023 - Present)',
+    'Oracle Certified Java Professional (07/2016 - Present)',
+    'Hackerrank Problem Solving (09/2020 - Present)',
   ],
 
   awards: [
     {
       title: 'Core Values Award',
       organization: 'Publicis Sapient',
-      date: 'October 2022',
+      date: '2022',
     },
     {
       title: 'Star of the Month',
       organization: 'Publicis Sapient',
-      date: 'February 2023',
+      date: '2023',
     },
     {
       title: 'Q2 World Leading Award',
-      organization: 'Publicis Sapient',
-      date: 'January 2023',
+      organization: 'Suncorp Group Ltd.',
+      date: '2023',
     },
   ],
 
@@ -95,41 +95,81 @@ export const aboutMe = {
 
   experience: [
     {
-      title: 'UI Lead',
-      company: 'Publicis Sapient',
-      period: 'June 2021 - Present',
-      location: 'India · Remote',
+      title: 'Senior Software Engineer',
+      company: 'B/S/H',
+      period: 'May 2025 - Present',
+      location: 'India',
       description:
-        'Leading UI development teams in building enterprise-grade applications. Architecting scalable React and Next.js solutions, establishing coding standards, and mentoring developers.',
+        'Building scalable full-stack applications with React, Next.js, and Node.js. Optimizing CI/CD pipelines, and monitoring performance through DataDog and SpeedCurve.',
       highlights: [
-        'Led frontend architecture for multiple high-impact client projects',
-        'Mentored team of 8+ developers on React best practices',
-        'Reduced page load time by 60% through performance optimization',
-        'Implemented CI/CD pipelines and automated testing workflows',
+        'Reduced TBT by 20% and page load by 25% through lazy hydration and async updates',
+        'Delivered spin-speed optimization features, enhancing user engagement',
+        'Monitored app performance using DataDog and SpeedCurve, enabling proactive optimizations',
+        'Enhanced screen reader compatibility and performed a11y audits, raising scores by 25%',
+        'Streamlined CI/CD pipelines, cutting deployment times by more than 50%',
       ],
       technologies: [
         'React',
         'Next.js',
         'TypeScript',
         'Node.js',
-        'AWS',
+        'DataDog',
+        'SpeedCurve',
+        'Docker',
+        'Storybook',
         'GraphQL',
+        'Vitest',
+        'GitHub Actions',
       ],
     },
     {
-      title: 'Senior Software Engineer',
+      title: 'Experience Engineer',
       company: 'Publicis Sapient',
-      period: 'January 2019 - May 2021',
+      period: 'Nov 2021 - Sept 2024',
+      location: 'India · Remote',
+      description:
+        'Led UI architecture design and Next.js migrations for critical client applications. Architected cloud-based solutions on AWS and Azure, established CI/CD pipelines.',
+      highlights: [
+        'Led UI architecture design for application revamp using React.js and TypeScript best practices',
+        'Spearheaded Next.js migration for 3 critical client applications, reducing Time to First Contentful Paint by 62%',
+        'Improved SEO rankings by 28% across all pages through Next.js migration',
+        'Established semantic release in CI/CD pipeline using GitHub Actions and Jenkins, reducing deployment time by 40%',
+        'Optimized React application performance through code-splitting and lazy loading, improving load times by 18%',
+        'Participated in Agile ceremonies and mentored junior developers',
+      ],
+      technologies: [
+        'React',
+        'TypeScript',
+        'Redux',
+        'GraphQL',
+        'Node.js',
+        'Jenkins',
+        'AWS',
+        'Azure',
+        'GitHub Actions',
+      ],
+    },
+    {
+      title: 'Project Engineer',
+      company: 'Wipro',
+      period: 'Nov 2017 - April 2019',
       location: 'India',
       description:
-        'Developed and maintained complex web applications for Fortune 500 clients. Focused on performance optimization, accessibility, and modern web standards.',
+        'Supported migration of client application from Mainframes to MERN stack. Improved database performance through optimization techniques.',
       highlights: [
-        'Built reusable component libraries used across multiple projects',
-        'Implemented server-side rendering with Next.js',
-        'Achieved 95+ Lighthouse scores across all metrics',
-        'Collaborated with UX designers to create pixel-perfect interfaces',
+        'Supported migration of client application from Mainframes to MERN stack',
+        'Converted 85% of legacy functionality while reducing operational costs by $120K annually',
+        'Improved database performance through normalization and indexing, reducing query response time by 50%',
       ],
-      technologies: ['React', 'Redux', 'JavaScript', 'SASS', 'Jest', 'Webpack'],
+      technologies: [
+        'MongoDB',
+        'Express.js',
+        'React',
+        'Node.js',
+        'MySQL',
+        'JavaScript',
+        'Java',
+      ],
     },
   ],
 
