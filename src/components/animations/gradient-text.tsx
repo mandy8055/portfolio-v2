@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { motion } from "motion/react";
+import { motion } from 'motion/react';
 
 interface GradientTextProps {
   children: string;
@@ -10,7 +10,7 @@ interface GradientTextProps {
 
 export function GradientText({
   children,
-  className = "",
+  className = '',
   animate = true,
 }: GradientTextProps) {
   if (!animate) {
@@ -27,14 +27,14 @@ export function GradientText({
     <motion.span
       className={`inline-block bg-linear-to-r from-theme-primary via-theme-secondary to-theme-tertiary bg-clip-text text-transparent leading-tight pb-2 ${className}`}
       style={{
-        backgroundSize: "200% auto",
+        backgroundSize: '200% auto',
       }}
       animate={{
-        backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
       }}
       transition={{
         duration: 5,
-        ease: "linear",
+        ease: 'linear',
         repeat: Infinity,
       }}
     >
