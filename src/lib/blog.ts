@@ -1,11 +1,11 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import matter from 'gray-matter';
-import { format } from 'date-fns';
-import readingTime from 'reading-time';
-import { compileMDX } from 'next-mdx-remote/rsc';
-import rehypeHighlight from 'rehype-highlight';
-import remarkGfm from 'remark-gfm';
+import fs from "node:fs";
+import path from "node:path";
+import matter from "gray-matter";
+import { format } from "date-fns";
+import readingTime from "reading-time";
+import { compileMDX } from "next-mdx-remote/rsc";
+import rehypeHighlight from "rehype-highlight";
+import remarkGfm from "remark-gfm";
 
 // Types
 export interface BlogPost {
@@ -33,7 +33,7 @@ export interface BlogPostMetadata {
   published: boolean;
 }
 
-const BLOG_PATH = path.join(process.cwd(), 'content/blog');
+const BLOG_PATH = path.join(process.cwd(), "content/blog");
 
 /**
  * Get all MDX files from the blog directory
@@ -42,7 +42,7 @@ export function getBlogFiles(): string[] {
   if (!fs.existsSync(BLOG_PATH)) {
     return [];
   }
-  return fs.readdirSync(BLOG_PATH).filter((file) => file.endsWith('.mdx'));
+  return fs.readdirSync(BLOG_PATH).filter((file) => file.endsWith(".mdx"));
 }
 
 /**
@@ -51,7 +51,7 @@ export function getBlogFiles(): string[] {
 export async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
     const filePath = path.join(BLOG_PATH, `${slug}.mdx`);
-    const fileContents = fs.readFileSync(filePath, 'utf8');
+    const fileContents = fs.readFileSync(filePath, "utf8");
 
     // Calculate reading time from raw content
     const stats = readingTime(fileContents);
@@ -77,14 +77,14 @@ export async function getBlogPost(slug: string): Promise<BlogPost | null> {
 
     return {
       slug,
-      title: frontmatter.title || 'Untitled',
-      description: frontmatter.description || '',
+      title: frontmatter.title || "Untitled",
+      description: frontmatter.description || "",
       date: frontmatter.date || new Date().toISOString(),
       formattedDate: format(
         new Date(frontmatter.date || new Date()),
-        'MMMM dd, yyyy',
+        "MMMM dd, yyyy",
       ),
-      author: frontmatter.author || 'Manuj Sankrit',
+      author: frontmatter.author || "Manuj Sankrit",
       tags: frontmatter.tags || [],
       readingTime: stats.text,
       content,
@@ -104,25 +104,25 @@ export function getAllBlogPosts(): BlogPostMetadata[] {
 
   const posts = files
     .map((filename) => {
-      const slug = filename.replace(/\.mdx$/, '');
+      const slug = filename.replace(/\.mdx$/, "");
 
       // Read file and parse frontmatter only (no MDX compilation)
       try {
         const filePath = path.join(BLOG_PATH, `${slug}.mdx`);
-        const fileContents = fs.readFileSync(filePath, 'utf8');
+        const fileContents = fs.readFileSync(filePath, "utf8");
         const { data } = matter(fileContents);
         const stats = readingTime(fileContents);
 
         return {
           slug,
-          title: data.title || 'Untitled',
-          description: data.description || '',
+          title: data.title || "Untitled",
+          description: data.description || "",
           date: data.date || new Date().toISOString(),
           formattedDate: format(
             new Date(data.date || new Date()),
-            'MMMM dd, yyyy',
+            "MMMM dd, yyyy",
           ),
-          author: data.author || 'Manuj Sankrit',
+          author: data.author || "Manuj Sankrit",
           tags: data.tags || [],
           readingTime: stats.text,
           published: data.published ?? true,

@@ -1,26 +1,26 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import { ThemeProvider } from '@/components/theme-provider';
-import { Navbar } from '@/components/navbar';
-import { SocialSidebar } from '@/components/social-sidebar';
-import { ConsoleGraffiti } from '@/components/console-graffiti';
-import './globals.css';
-import { Footer } from '@/components/custom-footer';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Navbar } from "@/components/navbar";
+import { SocialSidebar } from "@/components/social-sidebar";
+import { ConsoleGraffiti } from "@/components/console-graffiti";
+import "./globals.css";
+import { Footer } from "@/components/custom-footer";
 
 const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: 'Manuj Sankrit - UI Lead & React Expert',
+  title: "Manuj Sankrit - UI Lead & React Expert",
   description:
-    'Portfolio of Manuj Sankrit - UI Lead at Publicis Sapient specializing in React, Next.js, and modern web development.',
+    "Portfolio of Manuj Sankrit - UI Lead at Publicis Sapient specializing in React, Next.js, and modern web development.",
 };
 
 export default function RootLayout({
@@ -29,13 +29,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
+          attribute="class"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >

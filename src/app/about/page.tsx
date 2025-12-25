@@ -1,28 +1,28 @@
-'use client';
+"use client";
 
-import { Container } from '@/components/ui/custom-container';
+import { Container } from "@/components/ui/custom-container";
 import {
   Section,
   SectionTitle,
   SectionHeader,
-} from '@/components/ui/custom-section';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Award, BookOpen, Trophy, Heart } from 'lucide-react';
-import { aboutMe } from '@/data/personal';
-import { ScrollReveal } from '@/components/animations/scroll-reveal';
-import { GradientText } from '@/components/animations/gradient-text';
-import { SkillsShowcase } from '@/components/sections/skills-showcase';
+} from "@/components/ui/custom-section";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Award, BookOpen, Trophy, Heart } from "lucide-react";
+import { aboutMe } from "@/data/personal";
+import { ScrollReveal } from "@/components/animations/scroll-reveal";
+import { GradientText } from "@/components/animations/gradient-text";
+import { SkillsShowcase } from "@/components/sections/skills-showcase";
 
 export default function AboutPage() {
   return (
-    <div className='min-h-screen bg-background pt-20'>
-      <Section className='relative z-10'>
+    <div className="min-h-screen bg-background pt-20">
+      <Section className="relative z-10">
         <Container>
           <SectionHeader>
             <SectionTitle>
               About <GradientText animate={false}>Me</GradientText>
             </SectionTitle>
-            <p className='text-muted-foreground max-w-3xl mx-auto text-lg'>
+            <p className="text-muted-foreground max-w-3xl mx-auto text-lg">
               {aboutMe.bio}
             </p>
           </SectionHeader>
@@ -31,24 +31,24 @@ export default function AboutPage() {
           <SkillsShowcase />
 
           {/* Highlights, Certifications, Awards */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mt-12'>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
             {/* Highlights */}
             <ScrollReveal delay={0.1}>
-              <Card className='h-full'>
+              <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Trophy className='size-5 text-theme-primary' />
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="size-5 text-theme-primary" />
                     Highlights & Achievements
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className='space-y-2'>
+                  <ul className="space-y-2">
                     {aboutMe.highlights.map((highlight) => (
                       <li
                         key={highlight}
-                        className='flex items-start gap-2 text-sm'
+                        className="flex items-start gap-2 text-sm"
                       >
-                        <span className='text-theme-primary mt-1'>•</span>
+                        <span className="text-theme-primary mt-1">•</span>
                         <span>{highlight}</span>
                       </li>
                     ))}
@@ -59,18 +59,18 @@ export default function AboutPage() {
 
             {/* Certifications */}
             <ScrollReveal delay={0.2}>
-              <Card className='h-full'>
+              <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Award className='size-5 text-theme-secondary' />
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="size-5 text-theme-secondary" />
                     Certifications
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className='space-y-2'>
+                  <ul className="space-y-2">
                     {aboutMe.certifications.map((cert) => (
-                      <li key={cert} className='flex items-start gap-2 text-sm'>
-                        <span className='text-theme-secondary mt-1'>•</span>
+                      <li key={cert} className="flex items-start gap-2 text-sm">
+                        <span className="text-theme-secondary mt-1">•</span>
                         <span>{cert}</span>
                       </li>
                     ))}
@@ -81,19 +81,19 @@ export default function AboutPage() {
 
             {/* Awards */}
             <ScrollReveal delay={0.3}>
-              <Card className='h-full'>
+              <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Trophy className='size-5 text-theme-tertiary' />
+                  <CardTitle className="flex items-center gap-2">
+                    <Trophy className="size-5 text-theme-tertiary" />
                     Awards
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className='space-y-3'>
+                  <div className="space-y-3">
                     {aboutMe.awards.map((award) => (
                       <div key={award.title}>
-                        <p className='font-medium text-sm'>{award.title}</p>
-                        <p className='text-xs text-muted-foreground'>
+                        <p className="font-medium text-sm">{award.title}</p>
+                        <p className="text-xs text-muted-foreground">
                           {award.organization} • {award.date}
                         </p>
                       </div>
@@ -105,21 +105,21 @@ export default function AboutPage() {
 
             {/* Hobbies */}
             <ScrollReveal delay={0.4}>
-              <Card className='h-full'>
+              <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Heart className='size-5 text-pink-500' />
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="size-5 text-pink-500" />
                     Hobbies & Interests
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className='space-y-2'>
+                  <ul className="space-y-2">
                     {aboutMe.hobbies.map((hobby) => (
                       <li
                         key={hobby}
-                        className='flex items-start gap-2 text-sm'
+                        className="flex items-start gap-2 text-sm"
                       >
-                        <span className='text-pink-500 mt-1'>•</span>
+                        <span className="text-pink-500 mt-1">•</span>
                         <span>{hobby}</span>
                       </li>
                     ))}
@@ -130,25 +130,25 @@ export default function AboutPage() {
           </div>
 
           {/* Education */}
-          <div className='mt-12'>
-            <h2 className='text-3xl font-bold text-center mb-8'>
+          <div className="mt-12">
+            <h2 className="text-3xl font-bold text-center mb-8">
               <GradientText animate={false}>Education</GradientText>
             </h2>
-            <div className='max-w-3xl mx-auto'>
+            <div className="max-w-3xl mx-auto">
               {aboutMe.education.map((edu, index) => (
                 <ScrollReveal key={index}>
                   <Card>
                     <CardHeader>
-                      <CardTitle className='flex items-center gap-2'>
-                        <BookOpen className='size-5 text-theme-primary' />
+                      <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="size-5 text-theme-primary" />
                         {edu.degree}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className='font-semibold text-primary mb-2'>
+                      <p className="font-semibold text-primary mb-2">
                         {edu.institution}
                       </p>
-                      <p className='text-sm text-muted-foreground'>
+                      <p className="text-sm text-muted-foreground">
                         {edu.achievement}
                       </p>
                     </CardContent>
