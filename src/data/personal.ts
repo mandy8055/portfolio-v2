@@ -59,6 +59,7 @@ export const aboutMe = {
     '2x GATE Exam Qualifier (2020, 2021)',
     'Active Stack Overflow Contributor (6.8k+ rep)',
     'State-level Swimming Championship Medalist',
+    'Cracked JEE Mains',
   ],
 
   certifications: [
