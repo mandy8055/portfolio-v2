@@ -58,7 +58,7 @@ export default function ProjectsPage() {
             >
               All Projects ({projects.length})
             </Button>
-            {allTags.slice(0, 8).map((tag) => (
+            {allTags.slice(0, 19).map((tag) => (
               <Button
                 key={tag}
                 variant={filter === tag ? 'default' : 'outline'}
