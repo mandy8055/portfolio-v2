@@ -1,29 +1,29 @@
-import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface ContainerProps {
   children: ReactNode;
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: "sm" | "md" | "lg" | "xl" | "full";
 }
 
 const sizeStyles = {
-  sm: 'max-w-3xl',
-  md: 'max-w-5xl',
-  lg: 'max-w-7xl',
-  xl: 'max-w-[1400px]',
-  full: 'max-w-full',
+  sm: "max-w-3xl",
+  md: "max-w-5xl",
+  lg: "max-w-7xl",
+  xl: "max-w-[1400px]",
+  full: "max-w-full",
 };
 
 export function Container({
   children,
   className,
-  size = 'lg',
+  size = "lg",
 }: ContainerProps) {
   return (
     <div
       className={cn(
-        'mx-auto w-full px-4 sm:px-6 lg:px-8',
+        "mx-auto w-full px-4 sm:px-6 lg:px-8",
         sizeStyles[size],
         className,
       )}

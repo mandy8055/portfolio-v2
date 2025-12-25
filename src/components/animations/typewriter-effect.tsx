@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { useState, useEffect } from "react";
+import { motion } from "motion/react";
 
 interface TypewriterProps {
   words: string[];
@@ -16,10 +16,10 @@ export function Typewriter({
   loop = true,
   delayBetweenWords = 2000,
   typingSpeed = 100,
-  className = '',
+  className = "",
 }: TypewriterProps) {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [currentText, setCurrentText] = useState('');
+  const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -69,8 +69,8 @@ export function Typewriter({
       {currentText}
       <motion.span
         animate={{ opacity: [1, 0] }}
-        transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-        className='inline-block w-0.5 h-[1em] bg-current ml-1 align-middle'
+        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+        className="inline-block w-0.5 h-[1em] bg-current ml-1 align-middle"
       />
     </span>
   );

@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { motion } from 'motion/react';
-import { ReactNode } from 'react';
+import { motion } from "motion/react";
+import { ReactNode } from "react";
 
 interface ScrollRevealProps {
   children: ReactNode;
   className?: string;
   delay?: number;
-  direction?: 'up' | 'down' | 'left' | 'right';
+  direction?: "up" | "down" | "left" | "right";
 }
 
 export function ScrollReveal({
   children,
-  className = '',
+  className = "",
   delay = 0,
-  direction = 'up',
+  direction = "up",
 }: ScrollRevealProps) {
   const directions = {
     up: { y: 75, x: 0 },
@@ -34,7 +34,7 @@ export function ScrollReveal({
         y: 0,
         x: 0,
       }}
-      viewport={{ once: true, margin: '-100px' }}
+      viewport={{ once: true, margin: "-100px" }}
       transition={{
         duration: 0.6,
         delay,
