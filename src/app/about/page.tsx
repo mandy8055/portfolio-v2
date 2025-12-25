@@ -1,5 +1,3 @@
-'use client';
-
 import { Container } from '@/components/ui/custom-container';
 import {
   Section,
@@ -12,6 +10,27 @@ import { aboutMe } from '@/data/personal';
 import { ScrollReveal } from '@/components/animations/scroll-reveal';
 import { GradientText } from '@/components/animations/gradient-text';
 import { SkillsShowcase } from '@/components/sections/skills-showcase';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About Me',
+  description:
+    'Learn about Manuj Sankrit - Senior Software Engineer, Arctic Code Vault Contributor, 2x GATE Qualifier, and State Championship swimmer. Passionate about React, Next.js, and open-source development.',
+  keywords: [
+    'About Manuj Sankrit',
+    'Software Engineer',
+    'Arctic Code Vault',
+    'Stack Overflow',
+    'GATE Qualifier',
+    'React Developer',
+    'AWS Certified',
+  ],
+  openGraph: {
+    title: 'About Manuj Sankrit | Arctic Code Vault Contributor',
+    description:
+      '2x GATE Qualifier | AWS Certified | State Championship Swimmer',
+  },
+};
 
 export default function AboutPage() {
   return (

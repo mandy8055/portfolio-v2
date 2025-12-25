@@ -1,6 +1,26 @@
 import { getAllBlogPosts, getAllTags } from '@/lib/blog';
 import { Container } from '@/components/ui/custom-container';
 import { BlogList } from '@/components/blog/blog-list';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Blog',
+  description:
+    'Technical blog by Manuj Sankrit - Articles on React, Next.js, TypeScript, web performance, software architecture, and modern JavaScript development.',
+  keywords: [
+    'Tech Blog',
+    'React Tutorials',
+    'Next.js Articles',
+    'TypeScript Tips',
+    'Web Development Blog',
+    'JavaScript Blog',
+  ],
+  openGraph: {
+    title: 'Tech Blog | Manuj Sankrit',
+    description:
+      'Thoughts on React, Next.js, web development, and software engineering',
+  },
+};
 
 export default function BlogPage() {
   const allPosts = getAllBlogPosts();

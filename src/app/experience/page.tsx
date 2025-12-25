@@ -1,5 +1,3 @@
-'use client';
-
 import { Container } from '@/components/ui/custom-container';
 import {
   Section,
@@ -12,6 +10,28 @@ import { Briefcase, MapPin, Calendar } from 'lucide-react';
 import { aboutMe } from '@/data/personal';
 import { ScrollReveal } from '@/components/animations/scroll-reveal';
 import { GradientText } from '@/components/animations/gradient-text';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Experience',
+  description:
+    'Professional experience of Manuj Sankrit - Senior Software Engineer at B/S/H, former Experience Engineer at Publicis Sapient. Expertise in React, Next.js, TypeScript, AWS, Azure, CI/CD, and modern web architecture.',
+  keywords: [
+    'Software Engineer Experience',
+    'React Developer',
+    'Next.js Expert',
+    'Publicis Sapient',
+    'B/S/H',
+    'Full Stack Development',
+    'Cloud Architecture',
+    'CI/CD',
+  ],
+  openGraph: {
+    title: 'Work Experience | Manuj Sankrit',
+    description:
+      'Senior Software Engineer with expertise in React, Next.js, TypeScript, and cloud architecture',
+  },
+};
 
 export default function ExperiencePage() {
   return (
@@ -92,7 +112,9 @@ export default function ExperiencePage() {
                                   key={idx}
                                   className='flex items-start gap-2 text-sm'
                                 >
-                                  <span className='text-theme-primary mt-1'>•</span>
+                                  <span className='text-theme-primary mt-1'>
+                                    •
+                                  </span>
                                   <span>{highlight}</span>
                                 </li>
                               ))}

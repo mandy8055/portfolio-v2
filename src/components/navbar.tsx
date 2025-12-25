@@ -58,9 +58,13 @@ export function Navbar() {
               asChild
               className='hover:bg-theme-primary hover:text-white hover:border-theme-primary transition-colors'
             >
-              <Link href={personalInfo.resume} target='_blank'>
+              <a
+                href={personalInfo.resume}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
                 Resume
-              </Link>
+              </a>
             </Button>
             <ThemeToggle />
           </div>

@@ -114,10 +114,13 @@ export function EnhancedHero() {
               </a>
             </Button>
             <Button variant='ghost' size='lg' asChild>
-              <Link href={personalInfo.resume} target='_blank'>
-                <FileText className='size-4 mr-2' />
+              <a
+                href={personalInfo.resume}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
                 Resume
-              </Link>
+              </a>
             </Button>
           </motion.div>
         </div>
