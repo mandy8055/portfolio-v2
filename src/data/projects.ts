@@ -43,4 +43,22 @@ export const projects: Project[] = [
     featured: true,
     github: 'https://github.com/mandy8055/portfolio-v2',
   },
+  {
+    title: 'Web Hands-On Projects',
+    description:
+      'Collection of 14+ vanilla JavaScript projects including quote generator, infinite scroll, music player, calculator, and more. Built with modern HTML5, CSS3, and vanilla JavaScript.',
+    tags: ['JavaScript', 'HTML5', 'CSS3', 'Web APIs', 'DOM Manipulation'],
+    featured: false,
+    github: 'https://github.com/mandy8055/web_handsOn',
+    demo: 'https://mandy8055.github.io/web_handsOn',
+  },
+  {
+    title: 'Low Level Design Apps',
+    description:
+      'Monorepo of React applications implementing common low-level design patterns and problems. Built with TypeScript, Vite, and Tailwind CSS using Turborepo for efficient builds.',
+    tags: ['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'Turborepo'],
+    featured: false,
+    github: 'https://github.com/mandy8055/lld-apps',
+    demo: 'https://lld-apps.vercel.app',
+  },
 ];
