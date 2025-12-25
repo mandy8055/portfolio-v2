@@ -7,7 +7,7 @@ import {
   SectionHeader,
 } from '@/components/ui/custom-section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Award, BookOpen, Trophy, Heart } from 'lucide-react';
+import { Award, BookOpen, Trophy, Heart, Sparkles } from 'lucide-react';
 import { aboutMe } from '@/data/personal';
 import { ScrollReveal } from '@/components/animations/scroll-reveal';
 import { GradientText } from '@/components/animations/gradient-text';
@@ -124,6 +124,91 @@ export default function AboutPage() {
                       </li>
                     ))}
                   </ul>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+          </div>
+
+          {/* FUN FACTS SECTION */}
+          <div className='mt-8'>
+            <ScrollReveal delay={0.5}>
+              <Card className='h-full md:col-span-2 bg-linear-to-br from-theme-primary/5 to-theme-secondary/5 border border-theme-primary/10'>
+                <CardHeader>
+                  <CardTitle className='flex items-center gap-2'>
+                    <Sparkles className='size-5 text-yellow-500' />
+                    Plot Twist: I'm Not Just Code
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-6'>
+                  {/* Day/Night/Weekend Grid */}
+                  <div className='grid md:grid-cols-3 gap-4'>
+                    <div className='text-center p-4 rounded-lg bg-background/50 border border-theme-primary/20 hover:bg-background/80 transition-colors'>
+                      <p className='font-semibold text-sm mb-2 text-theme-primary'>
+                        <span className='inline-block text-2xl drop-shadow-sm brightness-110 contrast-125 dark:brightness-100 dark:contrast-100'>
+                          ☀️
+                        </span>{' '}
+                        Day Job
+                      </p>
+                      <p className='text-sm text-muted-foreground'>
+                        {aboutMe.dayJob}
+                      </p>
+                    </div>
+                    <div className='text-center p-4 rounded-lg bg-background/50 border border-theme-secondary/20 hover:bg-background/80 transition-colors'>
+                      <p className='font-semibold text-sm mb-2 text-theme-secondary'>
+                        <span className='inline-block text-2xl drop-shadow-sm brightness-110 contrast-125 dark:brightness-100 dark:contrast-100'>
+                          🌙
+                        </span>{' '}
+                        Night Shift
+                      </p>
+                      <p className='text-sm text-muted-foreground'>
+                        {aboutMe.nightShift}
+                      </p>
+                    </div>
+                    <div className='text-center p-4 rounded-lg bg-background/50 border border-theme-tertiary/20 hover:bg-background/80 transition-colors'>
+                      <p className='font-semibold text-sm mb-2 text-theme-tertiary'>
+                        <span className='inline-block text-2xl drop-shadow-sm brightness-110 contrast-125 dark:brightness-100 dark:contrast-100'>
+                          🎉
+                        </span>{' '}
+                        Weekends
+                      </p>
+                      <p className='text-sm text-muted-foreground'>
+                        {aboutMe.weekendVibe}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Fun Facts List */}
+                  <div>
+                    <h4 className='font-semibold mb-3 text-sm'>
+                      Fun Facts About Me:
+                    </h4>
+                    <ul className='grid md:grid-cols-2 gap-3'>
+                      {aboutMe.funFacts.map((fact) => (
+                        <li
+                          key={fact}
+                          className='flex items-start gap-2 text-sm p-3 rounded-lg bg-background/30 hover:bg-background/60 transition-colors'
+                        >
+                          <span className='text-yellow-500 mt-0.5 text-lg inline-block drop-shadow-sm brightness-110 contrast-125 dark:brightness-100 dark:contrast-100'>
+                            ✨
+                          </span>
+                          <span>{fact}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Dev Wisdom Quote */}
+                  <div className='pt-4 border-t border-border/50'>
+                    <p className='text-sm text-muted-foreground italic text-center'>
+                      <span className='inline-block text-base drop-shadow-sm brightness-110 contrast-125 dark:brightness-100 dark:contrast-100'>
+                        💬
+                      </span>{' '}
+                      "{aboutMe.devWisdom}"{' '}
+                      <span className='inline-block text-base drop-shadow-sm brightness-110 contrast-125 dark:brightness-100 dark:contrast-100'>
+                        🕵️‍♂️
+                      </span>
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </ScrollReveal>

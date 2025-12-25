@@ -174,6 +174,23 @@ export const aboutMe = {
     },
   ],
 
+  funFacts: [
+    '🌌 My code is literally frozen in the Arctic (Arctic Code Vault Contributor)',
+    '🏊 I debug pool lanes before debugging code (State Championship Medalist)',
+    '💬 6.8k+ Stack Overflow rep - Professional answer-giver',
+    '🎸 I play guitar badly, but enthusiastically',
+    "🏃‍♂️ Run like I'm being chased by production bugs",
+    '📚 Read self-help books while procrastinating on actual help',
+  ],
+
+  dayJob: 'Architecting scalable web applications',
+  nightShift: 'Conquering LeetCode problems like they owe me money',
+  weekendVibe:
+    'A mix of running, guitar riffs, and pretending my side projects will be done "soon"',
+
+  devWisdom:
+    "Debugging is like being a detective in a crime movie where you're also the murderer.",
+
   education: [
     {
       degree: 'B.Tech in Computer Science & Engineering',

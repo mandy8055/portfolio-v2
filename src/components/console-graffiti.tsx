@@ -11,7 +11,7 @@ declare global {
 export function ConsoleGraffiti() {
   useEffect(() => {
     console.log(
-      '%cBuilt with ❤️ by Manuj',
+      '%cThanks for stopping by! Now go write some bugs... I mean code! 😄',
       'color: #22d3ee; font-size: 16px; font-weight: bold;',
     );
 
@@ -26,7 +26,7 @@ export function ConsoleGraffiti() {
     window.showSecret = () => {
       console.clear();
       console.log(
-        '%c🎉 You found it!',
+        '%c🎉 You found an easter egg!',
         'color: #22d3ee; font-size: 24px; font-weight: bold;',
       );
       console.log(
