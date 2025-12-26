@@ -61,7 +61,7 @@ export const projects: Project[] = [
     demo: 'https://mandy8055.github.io/web_handsOn',
   },
   {
-    title: 'Portfolio Website v2',
+    title: 'Portfolio Website',
     description:
       'Modern portfolio website built with Next.js 16, featuring MDX blog support, animated components, and responsive design. Built with latest React 19 and TypeScript.',
     tags: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'MDX'],

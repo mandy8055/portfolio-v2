@@ -1,14 +1,12 @@
 'use client';
 
 import { motion } from 'motion/react';
-import Link from 'next/link';
 import { personalInfo, roles } from '@/data/personal';
 import { Button } from '@/components/ui/button';
 import { ParticlesBackground } from '@/components/backgrounds/particles-background';
 // Animations
 
 import { GradientText } from '@/components/animations/gradient-text';
-import { FileText } from 'lucide-react';
 import { Typewriter } from '@/components/animations/typewriter-effect';
 
 export function EnhancedHero() {
@@ -100,20 +98,6 @@ export function EnhancedHero() {
               </a>
             </Button>
             <Button variant='outline' size='lg' asChild>
-              <a
-                href='#contact'
-                onClick={(e) => {
-                  e.preventDefault();
-                  document
-                    .getElementById('contact')
-                    ?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className='cursor-pointer'
-              >
-                Contact Me
-              </a>
-            </Button>
-            <Button variant='ghost' size='lg' asChild>
               <a
                 href={personalInfo.resume}
                 target='_blank'

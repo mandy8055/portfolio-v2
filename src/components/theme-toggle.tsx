@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Monitor } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 
@@ -14,6 +14,19 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
+  const cycleTheme = () => {
+    switch (theme) {
+      case 'light':
+        setTheme('dark');
+        break;
+      case 'dark':
+        setTheme('system');
+        break;
+      default:
+        setTheme('light');
+    }
+  };
+
   if (!mounted) {
     return (
       <Button variant='ghost' size='icon'>
@@ -22,19 +35,28 @@ export function ThemeToggle() {
     );
   }
 
+  const getIcon = () => {
+    const iconClass = 'size-5 transition-all';
+
+    switch (theme) {
+      case 'light':
+        return <Moon className={iconClass} />;
+      case 'dark':
+        return <Monitor className={iconClass} />;
+      default:
+        return <Sun className={iconClass} />;
+    }
+  };
+
   return (
     <Button
       variant='ghost'
       size='icon'
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      onClick={cycleTheme}
       aria-label='Toggle theme'
       className='cursor-pointer'
     >
-      {theme === 'dark' ? (
-        <Sun className='size-5 transition-all' />
-      ) : (
-        <Moon className='size-5 transition-all' />
-      )}
+      {getIcon()}
     </Button>
   );
 }

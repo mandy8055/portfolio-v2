@@ -92,7 +92,7 @@ export default function RootLayout({
       <head>
         {/* Favicons - you can customize these */}
         <link rel='icon' href='/favicon.ico' sizes='any' />
-        <link rel='apple-touch-icon' href='/apple-touch-icon.png' />
+        <link rel='apple-touch-icon' href='/favicon.ico' />
         <link rel='manifest' href='/site.webmanifest' />
         <StructuredData />
       </head>
