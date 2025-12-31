@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 export const metadata: Metadata = {
   title: '404 - Page Not Found | Manuj Sankrit',
   description:
-    'This page seems to have swam away from the state championship...',
+    'This page seems to have swum away from the state championship...',
 };
 
 export default function NotFound() {
@@ -57,9 +57,8 @@ export default function NotFound() {
             <p>
               I've searched through my <strong>Arctic Code Vault</strong>{' '}
               contributions, checked the <strong>CI/CD pipelines</strong>, even
-              did a <strong>state-level dive </strong>
-              into the database... but this page is swimming in uncharted
-              waters.
+              did a <strong>state-level dive</strong> into the database... but
+              this page is swimming in uncharted waters.
             </p>
           </div>
         </div>
