@@ -18,7 +18,7 @@ export const personalInfo: PersonalInfo = {
   name: 'Manuj Sankrit',
   role: 'Senior Software Engineer',
   tagline: 'Senior Software Engineer at B/S/H',
-  email: 'manuj.sankrit1996@gmail.com',
+  email: 'manuj.sankrit8055@gmail.com',
   location: 'India',
   social: [
     {

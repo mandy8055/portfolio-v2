@@ -67,5 +67,6 @@ export const projects: Project[] = [
     tags: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'MDX'],
     featured: true,
     github: 'https://github.com/mandy8055/portfolio-v2',
+    demo: 'https://manuj-sankrit-8055.vercel.app',
   },
 ];
