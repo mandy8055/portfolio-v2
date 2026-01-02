@@ -1,0 +1,649 @@
+---
+title: 'TypeScript Utility Types I Use Every Day'
+description: 'The 5 built-in TypeScript utilities that transformed my codebase from verbose chaos to elegant type safety'
+date: 2026-01-05
+tags: ['typescript', 'web development', 'react', 'type safety']
+---
+
+I used to think I was pretty good at TypeScript. Then I discovered utility types, and realized I'd been coding with one hand tied behind my back.
+
+Let me paint you a picture: I work on a large-scale Next.js application. We're talking **98.8% TypeScript** (yes, we're _that_ serious about types). For months, I was writing the same type patterns over and over. Copy-pasting type definitions. Wrestling with nullable API responses. Building components that needed 47 different prop combinations just to handle a button that _sometimes_ needs to be a link.
+
+My code reviews looked like this:
+
+- "Can we make this more reusable?"
+- "This type definition is 50 lines long..."
+- "Why does this need `any`?"
+
+Then I discovered TypeScript's **built-in utility types**, and everything changed.
+
+Today, I'm sharing the **5 utilities I reach for every single day**—with real examples from production code, not contrived tutorials. These aren't fancy tricks; they're the workhorses that solve 80% of my type problems.
+
+Let's dive in. 🏊‍♂️
+
+---
+
+## The Essential Five
+
+### 1. `Record<K, T>` - "The Dictionary Maker" 📖
+
+**The Pain:**
+
+Every time I needed a lookup table or enum-like object, I'd write this:
+
+```typescript
+// ❌ Before - No type safety, just vibes
+const environments: { [key: string]: string } = {
+  DEV: 'DEV',
+  STAGING: 'STAGING',
+  TYPO: 'STAGGING', // Oops! No error, just a runtime bug waiting to happen
+};
+
+// Later in code...
+const env = environments['PRODUTION']; // undefined, but TypeScript is chill about it
+```
+
+TypeScript accepts this, but it's basically `any` with extra steps. The keys aren't validated. The values aren't validated. It's type-safety theater.
+
+**The Solution:**
+
+```typescript
+// ✅ After - Type-safe keys AND values
+type Environment = 'DEV' | 'STAGING' | 'PROD';
+
+export const ENVIRONMENTS: Record<Environment, Environment> = {
+  DEV: 'DEV',
+  STAGING: 'STAGING',
+  PROD: 'PROD',
+  TYPO: 'DEV',
+  // ❌ TypeScript error: Type '"TYPO"' is not assignable to type 'DEV' | 'STAGING' | 'PROD'
+};
+
+// Now this is also caught:
+const ENVIRONMENTS: Record<Environment, Environment> = {
+  DEV: 'dev',
+  // ❌ Error: Type '"dev"' is not assignable to type 'Environment'
+};
+```
+
+`Record<K, T>` creates an object type where:
+
+- `K` = the allowed keys (union of string literals)
+- `T` = the type of values
+
+**Real Use Cases:**
+
+- Configuration objects with known keys
+- Enum-like lookups
+- Mapping IDs to data structures
+- Feature flags
+
+**When to use:** When you know all possible keys upfront AND need type-safe values.
+
+**Ninja Tip - Level Up:**
+
+Combine `Record` with `const` arrays for maximum type safety:
+
+```typescript
+const STATUSES = ['pending', 'approved', 'rejected'] as const;
+type Status = (typeof STATUSES)[number];
+// Result: 'pending' | 'approved' | 'rejected'
+
+type StatusConfig = {
+  label: string;
+  color: string;
+};
+
+type StatusMap = Record<Status, StatusConfig>;
+// Now TypeScript enforces you define ALL statuses:
+
+const statusMap: StatusMap = {
+  pending: { label: 'Pending', color: 'yellow' },
+  approved: { label: 'Approved', color: 'green' },
+  // ❌ Error: Property 'rejected' is missing
+};
+```
+
+Single source of truth + compile-time validation = chef's kiss. 👨‍🍳💋
+
+---
+
+### 2. `NonNullable<T>` - "The Null Destroyer" 💥
+
+**The Pain:**
+
+If you've worked with GraphQL or REST APIs, you know this pain:
+
+```typescript
+// API response structure (everything is nullable, why not?)
+type ApiResponse = {
+  data?: {
+    user?: {
+      posts?: {
+        title?: string;
+      }[];
+    };
+  };
+};
+
+// Accessing nested data becomes optional chaining hell:
+const title = response?.data?.user?.posts?.[0]?.title;
+//            ^     ^      ^       ^        ^      ^
+//            Question marks everywhere. My code looks confused.
+
+// And the type is: string | undefined | undefined | undefined...
+// (TypeScript is just as confused as my code looks)
+```
+
+Every time you access a property, you're playing Russian roulette with `undefined`.
+
+**The Solution:**
+
+Here's a pattern I use in _every single file_ that touches API data:
+
+```typescript
+// Step 1: Create a helper alias (trust me on this)
+type NN<T> = NonNullable<T>;
+
+// Step 2: Chain unwrapping from the top down
+type ApiData = NN<ApiResponse['data']>;
+//             ^^^ Removes | undefined | null
+
+type UserData = NN<ApiData['user']>;
+//              ^^^ user is no longer optional
+
+type PostsData = NN<UserData['posts']>;
+//                          ^^^^^^^^ Get type of array elements
+
+type Post = NN<PostsData[number]>;
+
+type PostTitle = NN<Post['title']>;
+// Final result: string ✨
+// No question marks, no uncertainty, just clean string
+```
+
+**Real Pattern from Production:**
+
+This is literally from my codebase (simplified):
+
+```typescript
+import { GetUserPostsQuery } from './graphql.generated';
+
+type NN<T> = NonNullable<T>;
+
+type QueryData = NN<GetUserPostsQuery>;
+
+type UserData = NN<QueryData['user']>;
+
+type PostsData = NN<UserData['posts']>;
+
+type Post = NN<PostsData[number]>;
+
+// Now I can confidently use Post without any optional chaining
+// It's guaranteed to have the shape I expect
+```
+
+**When to use:**
+
+- API responses (GraphQL, REST, tRPC)
+- Any time you see `Type | null | undefined` and you KNOW it exists
+- Unwrapping deeply nested optional structures
+
+**Ninja Tip - Save Your Sanity:**
+
+Create the `NN<T>` alias at the top of your types file. Your future self (and your teammates) will thank you:
+
+```typescript
+// types/api.ts
+export type NN<T> = NonNullable<T>;
+
+// Now everywhere:
+import type { NN } from '@/types/api';
+type CleanData = NN<MessyApiResponse['data']>;
+```
+
+Three characters instead of fourteen. You're welcome. 😎
+
+---
+
+### 3. `Partial<T>` - "The Optional Converter" 🎛️
+
+**The Pain:**
+
+Testing utilities and mock factories are PAINFUL without `Partial`:
+
+```typescript
+interface DOMRect {
+  bottom: number;
+  top: number;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  toJSON: () => {};
+}
+
+// Without Partial, you must provide EVERYTHING
+function createMockRect(rect: DOMRect): DOMRect {
+  return rect;
+}
+
+// In your test:
+createMockRect({
+  bottom: 100,
+  top: 0,
+  left: 0,
+  right: 0,
+  width: 0,
+  height: 0,
+  x: 0,
+  y: 0,
+  toJSON: () => ({}),
+});
+// I only care about 'bottom' but I have to provide 9 properties 😭
+```
+
+**The Solution:**
+
+```typescript
+// Only override what you actually care about
+function createMockRect(overrides: Partial<DOMRect> = {}): DOMRect {
+  return {
+    bottom: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+    ...overrides, // ✅ Spread wins, only what you need
+  };
+}
+
+// In your test:
+createMockRect({ bottom: 100 });
+// ✅ Works! Everything else gets defaults
+```
+
+`Partial<T>` makes every property optional. It's like putting a question mark on every field, but with less typing.
+
+**Real Use Cases:**
+
+- **Test builders & mock factories** (like above)
+- **Update functions** where you only change some fields:
+
+```typescript
+function updateUser(id: string, updates: Partial<User>) {
+  // Merge updates with existing user
+}
+
+updateUser('123', { email: 'new@email.com' });
+// Only update email, leave name/avatar/etc alone
+```
+
+- **Configuration with defaults:**
+
+```typescript
+function fetchProducts(options: Partial<FetchOptions> = {}) {
+  const { page = 1, limit = 20, sort = 'asc' } = options;
+  // ...
+}
+
+fetchProducts(); // Use all defaults
+fetchProducts({ page: 2 }); // Only override page
+```
+
+**When to use:** When you have sensible defaults and want to allow selective overrides.
+
+**Ninja Tip - The Builder Pattern:**
+
+```typescript
+class UserBuilder {
+  private user: Partial<User> = {};
+
+  withName(name: string) {
+    this.user.name = name;
+    return this;
+  }
+
+  withEmail(email: string) {
+    this.user.email = email;
+    return this;
+  }
+
+  build(): User {
+    return {
+      id: this.user.id ?? 'default-id',
+      name: this.user.name ?? 'Anonymous',
+      email: this.user.email ?? 'no-email@example.com',
+      // ... all required fields with defaults
+    };
+  }
+}
+
+// Usage:
+const user = new UserBuilder()
+  .withName('John')
+  .withEmail('john@example.com')
+  .build();
+```
+
+Test data creation becomes _beautiful_. ✨
+
+---
+
+### 4. `Pick<T, K>` & `Omit<T, K>` - "The Type Sculptors" 🗿
+
+These two are best friends. They work together like peanut butter and jelly.
+
+**The Pain:**
+
+```typescript
+// You have a massive User type
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  ssn: string;
+  creditCard: string;
+  address: string;
+  phone: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLogin: Date;
+}
+
+// You need different versions for different contexts:
+// - User profile (name, email only)
+// - Public user (everything except sensitive data)
+// - User DTO (no date objects)
+
+// Copy-paste hell begins...
+interface UserProfile {
+  name: string;
+  email: string;
+}
+// Every time User changes, update this manually 😭
+```
+
+**The Solution:**
+
+#### `Pick<T, K>` - Extract only what you need
+
+```typescript
+// Extract specific properties
+type UserProfile = Pick<User, 'name' | 'email'>;
+// Result: { name: string, email: string }
+
+// Component props from larger type
+interface ProductData {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  images: string[];
+  inventory: number;
+  weight: number;
+  dimensions: { width: number; height: number; depth: number };
+  manufacturer: string;
+  // ... 20 more fields
+}
+
+// Your component only needs these 3
+type ProductCardProps = Pick<ProductData, 'name' | 'price' | 'images'>;
+
+function ProductCard({ name, price, images }: ProductCardProps) {
+  // Clean, focused component
+}
+```
+
+#### `Omit<T, K>` - Remove what you don't want
+
+```typescript
+// Remove sensitive fields
+type PublicUser = Omit<User, 'password' | 'ssn' | 'creditCard'>;
+// Result: User without the dangerous stuff
+
+// API DTO (no Date objects, they don't serialize well)
+type UserDTO = Omit<User, 'createdAt' | 'updatedAt' | 'lastLogin'>;
+```
+
+**When to use:**
+
+- **`Pick`**: Extracting a subset (component props, DTOs, focused views)
+- **`Omit`**: Removing sensitive/unwanted fields (public APIs, sanitization)
+
+**The Marie Kondo Rule™:**
+
+> "Does this property spark joy in this context? No? `Omit` it." 🧹
+
+**Ninja Tip - They Compose:**
+
+```typescript
+// Pick some fields, THEN omit from those
+type EditableUserProfile = Omit
+  Pick<User, 'name' | 'email' | 'id'>,
+  'id'
+>
+// Result: { name: string, email: string }
+// (We picked 3, then removed id)
+
+// This is the same as:
+type EditableUserProfile = Pick<User, 'name' | 'email'>
+// But sometimes the composed version is clearer for complex scenarios
+```
+
+**Real-World Pattern:**
+
+```typescript
+// Base props
+interface BaseButtonProps {
+  variant: 'primary' | 'secondary';
+  size: 'sm' | 'md' | 'lg';
+  onClick: () => void;
+  disabled: boolean;
+}
+
+// Icon button doesn't need size (icon is always sized to content)
+type IconButtonProps = Omit<BaseButtonProps, 'size'>;
+
+// Link button needs href, not onClick
+type LinkButtonProps = Omit<BaseButtonProps, 'onClick'> & {
+  href: string;
+};
+```
+
+Keep your types **DRY** (Don't Repeat Yourself). Single source of truth, sculpted to fit. 🎨
+
+---
+
+### 5. `Exclude<T, U>` - "The Union Filter" 🚫
+
+**The Pain:**
+
+```typescript
+// You have a union of all possible page types
+type PageType =
+  | 'home'
+  | 'about'
+  | 'blog'
+  | 'blog-post'
+  | 'contact'
+  | 'admin-dashboard';
+
+// But some contexts can't use all of them
+// Admin dashboard is only available to authenticated users
+
+// Manual approach: redefine the type
+type PublicPageTypes = 'home' | 'about' | 'blog' | 'blog-post' | 'contact';
+// ❌ Duplication! Now if PageType changes, update here too
+```
+
+**The Solution:**
+
+```typescript
+// Filter out unwanted values
+type PublicPageTypes = Exclude<PageType, 'admin-dashboard'>;
+// Result: 'home' | 'about' | 'blog' | 'blog-post' | 'contact'
+
+// Exclude multiple at once
+type SimplePages = Exclude<PageType, 'admin-dashboard' | 'blog-post'>;
+// Result: 'home' | 'about' | 'blog' | 'contact'
+```
+
+`Exclude<T, U>` removes types from a union. Think of it like `Array.filter()` but for types.
+
+**Real Pattern from Production:**
+
+```typescript
+// From routing logic
+const validPageTypes = new Set([
+  'home',
+  'about',
+  'blog',
+  'blog-post',
+  'contact',
+  'admin-dashboard',
+  'internal-tools',
+] as const)
+
+type SetValues<S> = S extends Set<infer V> ? V : never
+type AllPageTypes = SetValues<typeof validPageTypes>
+
+// Public-facing routes (hide internal tools)
+type PublicPageTypes = Exclude<AllPageTypes, 'internal-tools'>
+
+// Guest-accessible pages (no admin or auth-required)
+type GuestPageTypes = Exclude
+  AllPageTypes,
+  'admin-dashboard' | 'internal-tools'
+>
+```
+
+**When to use:**
+
+- Filtering union types
+- Removing invalid states from state machines
+- Creating subsets of string literal unions
+- Validation logic
+
+**Ninja Tip - Meet `Extract` (the opposite):**
+
+```typescript
+// Extract ONLY matching types
+type BlogPages = Extract
+  AllPageTypes,
+  'blog' | 'blog-post'
+>
+// Result: 'blog' | 'blog-post'
+
+// Only string keys from an object
+type StringKeys = Extract<keyof User, string>
+```
+
+`Exclude` = keep everything EXCEPT these  
+`Extract` = keep ONLY these
+
+Choose your fighter. ⚔️
+
+---
+
+## Bonus: Real Patterns I Use Daily
+
+Before we wrap up, here are three patterns I use constantly that combine these utilities:
+
+### Pattern 1: Type from Array Values
+
+```typescript
+const PRIORITY_LEVELS = [
+  'critical',
+  'high',
+  'medium',
+  'low',
+  'minimal',
+] as const;
+type Priority = (typeof PRIORITY_LEVELS)[number];
+// Result: 'critical' | 'high' | 'medium' | 'low' | 'minimal'
+
+// Why this rocks: Single source of truth
+const validPriority: Priority = 'high'; // ✅
+const invalidPriority: Priority = 'urgent'; // ❌ Error!
+
+// You can iterate over the array at runtime:
+PRIORITY_LEVELS.forEach((p) => console.log(p));
+
+// AND use it for type safety at compile time
+// No duplication!
+```
+
+### Pattern 2: Type from Set Values
+
+```typescript
+type SetValues<S> = S extends Set<infer V> ? V : never;
+
+const validStatuses = new Set(['pending', 'approved', 'rejected'] as const);
+type Status = SetValues<typeof validStatuses>;
+// Result: 'pending' | 'approved' | 'rejected'
+
+// Runtime validation + compile-time types from same source
+function isValidStatus(s: string): s is Status {
+  return validStatuses.has(s as Status);
+}
+```
+
+### Pattern 3: Combining Utilities
+
+```typescript
+// Create reusable composed utilities
+type PartialPick<T, K extends keyof T> = Partial<Pick<T, K>>;
+
+// Example: Update form - only these fields are editable, and all optional
+type UserUpdateForm = PartialPick<User, 'name' | 'email' | 'phone'>;
+// Result: { name?: string, email?: string, phone?: string }
+
+// Another combo: Required subset
+type RequiredPick<T, K extends keyof T> = Required<Pick<T, K>>;
+
+type UserRegistrationForm = RequiredPick<User, 'name' | 'email' | 'password'>;
+// Result: { name: string, email: string, password: string } (all required)
+```
+
+Utilities are LEGO blocks. Stack 'em however you want. 🧱
+
+---
+
+## Quick Reference
+
+**Bookmark this page** - you'll need these:
+
+| Utility          | What It Does                | When to Use             |
+| ---------------- | --------------------------- | ----------------------- |
+| `Record<K,T>`    | Type-safe dictionary        | Config objects, lookups |
+| `NonNullable<T>` | Remove null/undefined       | API unwrapping          |
+| `Partial<T>`     | Make everything optional    | Test mocks, updates     |
+| `Pick<T,K>`      | Extract specific properties | Component props         |
+| `Omit<T,K>`      | Remove specific properties  | Public APIs             |
+| `Exclude<T,U>`   | Filter union types          | State machines          |
+
+**Copy-paste patterns:**
+
+```typescript
+type NN<T> = NonNullable<T>; // Save yourself typing
+type Status = (typeof ARRAY)[number]; // Type from array
+type Update<T, K> = Partial<Pick<T, K>>; // Compose utilities
+```
+
+---
+
+## What's Next?
+
+These built-in utilities only go one level deep. **Next week:** Building custom utilities like `DeepPartial<T>`, `DeepReadonly<T>`, and the `Polymorphic` type pattern that powers flexible component APIs.
+
+Until then, happy typing! 💙
+
+---

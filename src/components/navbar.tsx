@@ -40,15 +40,13 @@ export function Navbar() {
                 Projects
                 <span className='absolute -bottom-1 left-0 w-0 h-0.5 bg-theme-primary transition-all group-hover:w-full'></span>
               </Link>
-              {/* UNCOMMENT THIS WHEN READY TO ACTIVATE BLOG (2026) - See tmp/BLOG_SETUP_GUIDE.md */}
-
-              {/* <Link
+              <Link
                 href='/blog'
                 className='text-sm font-medium text-muted-foreground hover:text-theme-primary transition-colors relative group'
               >
                 Blog
                 <span className='absolute -bottom-1 left-0 w-0 h-0.5 bg-theme-primary transition-all group-hover:w-full'></span>
-              </Link> */}
+              </Link>
             </div>
           </div>
           <div className='flex items-center gap-2'>

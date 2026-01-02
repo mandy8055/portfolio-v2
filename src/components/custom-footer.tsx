@@ -68,14 +68,14 @@ export function Footer() {
                   Projects
                 </Link>
               </li>
-              {/* <li>
+              <li>
                 <Link
                   href='/blog'
                   className='text-sm text-muted-foreground hover:text-theme-primary transition-colors'
                 >
                   Blog
                 </Link>
-              </li> */}
+              </li>
             </ul>
           </div>
 

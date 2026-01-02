@@ -6,6 +6,7 @@ import readingTime from 'reading-time';
 import { compileMDX } from 'next-mdx-remote/rsc';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
+import { mdxComponents } from '../components/mdx-element';
 
 // Types
 export interface BlogPost {
@@ -56,7 +57,7 @@ export async function getBlogPost(slug: string): Promise<BlogPost | null> {
     // Calculate reading time from raw content
     const stats = readingTime(fileContents);
 
-    // Compile MDX
+    // Compile MDX with custom components
     const { content, frontmatter } = await compileMDX<{
       title: string;
       description: string;
@@ -66,6 +67,7 @@ export async function getBlogPost(slug: string): Promise<BlogPost | null> {
       published?: boolean;
     }>({
       source: fileContents,
+      components: mdxComponents,
       options: {
         parseFrontmatter: true,
         mdxOptions: {
@@ -185,10 +187,10 @@ export async function getRelatedPosts(
   currentSlug: string,
   limit = 3,
 ): Promise<BlogPostMetadata[]> {
-  const currentPost = await getBlogPost(currentSlug);
-  if (!currentPost) return [];
-
   const allPosts = getAllBlogPosts();
+  const currentPost = allPosts.find((post) => post.slug === currentSlug);
+
+  if (!currentPost) return [];
 
   // Calculate relevance score based on shared tags
   const scoredPosts = allPosts
