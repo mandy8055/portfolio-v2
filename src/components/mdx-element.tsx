@@ -29,7 +29,7 @@ export const mdxComponents = {
       {children}
     </pre>
   ),
-  // Custom heading components with anchor links
+  // Custom heading components
   h1: ({ children, ...props }: ComponentProps<'h1'>) => (
     <h1
       className='text-4xl font-bold mt-8 mb-4 text-gray-900 dark:text-gray-100'
