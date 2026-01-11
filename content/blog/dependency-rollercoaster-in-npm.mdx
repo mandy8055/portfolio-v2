@@ -1,0 +1,173 @@
+---
+title: 'Dependency Rollercoaster: Navigating the NPM Theme Park'
+description: 'Understanding different types of dependencies and what semver means when it comes to npm'
+date: 2026-01-12
+tags: ['node', 'npm', 'yarn', 'pnpm']
+---
+
+## The "Aha!" Moment That Started It All
+
+I was implementing a new feature, feeling like a code wizard 🧙‍♂️. I submitted the PR, and then my TL drops a comment that sounds like it's in a foreign language:
+
+> You need to add these as peer dependencies so the consuming app can install them.
+
+_Wait, what?_ 🤔
+
+I stared at my screen. I'd been using `dependencies` and `devDependencies` since I started with Node, but **peer dependencies**? And why do I need to install `react-hook-form` when neither the library I am using has it as a direct dependency, nor am I using it directly?
+
+That confusion led me down a rabbit hole that transformed how I understand npm's dependency ecosystem. It turns out, managing a `package.json` is a lot like running an **Amusement Park**.
+
+---
+
+## 🎢 The Four Zones of Dependency Park
+
+Recently, I took my nephew to an amusement park and derived the analogy so that the concept stays in my brain for long, therefore; I will be using this analogy. Let us think of our project as a world-class theme park. To keep the rides running and the guests happy, we need different types of resources.
+
+### 1. **Dependencies** — The Main Attractions
+
+```json
+"dependencies": {
+  "react": "^18.2.0",
+  "axios": "^1.6.0"
+}
+```
+
+**What?** These are the actual Rollercoasters. If the 'Big Loop' package isn't there, the park isn't a theme park—it’s just an empty parking lot.
+
+**When to use:** Any package our code directly "rides" (imports) and needs at runtime to function for the guests.
+
+**The Rule:** These get installed automatically. If we don't have these, the park is closed(code won't work in production).
+
+---
+
+### 2. **DevDependencies** — The Maintenance Crew
+
+```json
+"devDependencies": {
+  "jest": "^29.0.0",
+  "eslint": "^8.0.0",
+  "typescript": "^5.0.0"
+}
+```
+
+**What?** The hard hats, the wrenches, and the blueprints. The guests don't see them, but we can't _build_ or _repair_ the rollercoaster without them.
+
+**When to use:** Tools for development, testing, building, or linting (like Jest, ESLint, or Vite).
+
+**The Rule:** These are **NOT** installed when someone visits our park (installs our package as a library). They only exist at the construction site (our local machine).
+
+---
+
+### 3. **PeerDependencies** — The "Bring Your Own Gear" Requirement
+
+```json
+"peerDependencies": {
+  "react": "^18.0.0",
+  "react-dom": "^18.0.0"
+}
+```
+
+**What they are:** This is the "Requirement" sign at the entrance of a ride. Imagine a water slide that says: _"We provide the slide, but YOU must bring your own swimsuit."_
+
+**The "Aha!" Moment:** This is where I got stuck!
+
+Our component library is the water slide. If we bundled a swimsuit with every single slide (put React in `dependencies`), the park would be full of redundant, soggy clothes that don't fit the guests (**Bundle Bloat** and **Version Conflicts**).
+
+Instead, we just check at the gate: "Do you have a swimsuit (React 19)?" Our library expects the **host environment** to already have this package installed.
+
+**The Chain Mystery:** This is the "Hidden Requirement" through **Transitive Peer Dependencies**.
+
+If our slide uses a specific floatie (another library say `awesome-form-components`), and that floatie requires a pump (`react-hook-form`), the guest suddenly needs both! Even though our library doesn't use the pump directly, the **consuming application** must install it.
+
+**The Dependency Chain:**
+
+```shell
+Main App → My Library → awesome-form-components (requires react-hook-form as peer)
+                                  ↓
+Result: Main App must install react-hook-form
+```
+
+If it doesn't, npm throws a **Peer Dependency Resolution Error**.
+
+**When to use:**
+
+- **Plugins & UI Kits:** Our code "plugs into" a larger framework (React, Vue, Tailwind)
+- **Singleton Enforcement:** Only one instance of a package can exist (two React versions = broken app)
+- **Version Flexibility:** Let developers use any compatible version within our specified range
+
+---
+
+### 4. **OptionalDependencies** — The VIP Fast Pass
+
+```json
+"optionalDependencies": {
+  "fsevents": "^2.3.0"
+}
+```
+
+**What?** The "nice-to-have" extras. Maybe it's a heated seat on the log flume. If the heater is out of stock, the ride still works—it's just a bit colder.
+
+**When to use:** Platform-specific optimizations (like macOS-only features).
+
+**The Rule:** If installation fails, `npm` just shrugs and keeps going. Your code should handle the "empty seat" gracefully!
+
+---
+
+## The Supply Chain Drama (Transitive Dependencies)
+
+**Transitive dependencies** are the "dependencies of our dependencies."
+
+Let us imagine it as the supply chain for our park. We bought a Rollercoaster (Direct), but that rollercoaster was built using a specific brand of bolts and grease (Transitive). We didn't order the bolts, but they are in our park now!
+
+```text
+Your Park (Project)
+ ├── Rollercoaster (Direct)
+ │    ├── Specialized Bolts (Transitive)
+ │    └── Industrial Grease (Transitive)
+```
+
+**The Danger:** If those bolts have a safety recall ([security vulnerability](https://www.jit.io/resources/app-security/npm-security-vulnerabilities-what-developers-need-to-know)), your whole ride is at risk, even though you never talked to the bolt manufacturer.
+
+### Quick Reference Guide
+
+| Type                     | Installed When? | The Analogy                  |
+| ------------------------ | --------------- | ---------------------------- |
+| **dependencies**         | Always          | The Rides (Essential)        |
+| **devDependencies**      | Local only      | The Tools (Construction)     |
+| **peerDependencies**     | By the User     | The Gear (Swimsuits/Helmets) |
+| **optionalDependencies** | If possible     | The VIP Perks (Extras)       |
+
+### Real-World Tips from the Trenches
+
+1. **Building a library?** Use `peerDependencies` for framework packages and not force our version of React on our users! It would provide more flexibility to our users along with compacting the bundle size.
+2. **Seeing duplicates?** Run `npm dedupe` or `yarn dedupe` to make sure our park isn't storing five copies of the same "bolt."
+3. **Lock it down:** Always commit `package-lock.json`. It's the "As-Built" blueprint that ensures the park looks the same for every developer(everyone using our app has same version of dependencies).
+
+---
+
+## 🔢 The Version Symphony: ^ vs ~ vs Exact
+
+Most of us are aware of this but just to provide an overall guide let us take a quick look at how versioning works. How do we tell our suppliers which parts to send? We use symbols.
+
+| Symbol   | Name  | Meaning       | Example          | Accepts             | Rejects |
+| -------- | ----- | ------------- | ---------------- | ------------------- | ------- |
+| **^**    | Caret | Minor + Patch | `^1.2.3`         | 1.2.3, 1.3.0, 1.9.9 | 2.0.0   |
+| **~**    | Tilde | Patch only    | `~1.2.3`         | 1.2.3, 1.2.4, 1.2.9 | 1.3.0   |
+| **None** | Exact | Exact match   | `1.2.3`          | 1.2.3 only          | 1.2.4   |
+| **>=**   | Range | Greater/equal | `>=1.2.0 <2.0.0` | 1.2.0 - 1.99.99     | 2.0.0+  |
+
+---
+
+## 🔮 What's Next? Part 2: The Transpile Adventure
+
+Understanding the logic is one thing. But what happens when we buy a high-performance **15A Geyser (ESM)** and try to force it into a standard **5A Bedroom Socket (CommonJS)**?
+
+Suddenly, our project "trips the circuit" and we get the dreaded: `SyntaxError: Cannot use import statement outside a module`
+
+In Part 2, I’ll share my insights into the technical "wiring" of our project:
+
+- **15A vs 5A:** Why ESM and CommonJS don't just "plug and play."
+- **The Short Circuit:** Why our build breaks even when our code logic is perfect.
+- **The Heavy-Duty Adapter:** Solving the mystery of `transpilePackages`.
+
+**Stay tuned! We’re about to fix the wiring next. ⚡**
