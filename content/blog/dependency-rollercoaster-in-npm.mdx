@@ -1,0 +1,333 @@
+---
+title: 'Dependency Rollercoaster in npm'
+description: 'Understanding different type of dependency and what semver mean when it comes to npm'
+date: 2026-01-13
+tags: ['node', 'npm', 'yarn', 'pnpm']
+---
+
+## The "Aha!" Moment That Started It All
+
+Picture this: You're implementing a shiny new feature, feeling like a code wizard 🧙‍♂️. You submit your PR, and then your tech lead drops a comment that sounds like it's in a foreign language:
+
+> "You need to add these as peer dependencies so the consuming app can install them."
+
+_Wait, what?_ 🤔
+
+I stared at my screen. I'd been using `dependencies` and `devDependencies` for ages, but **peer dependencies**? And why do I need to install `react-hook-form` when I'm not even using it directly? My component library was just consuming another form library, and suddenly I'm responsible for its dependencies too?
+
+That confusion led me down a rabbit hole that transformed how I understand npm's dependency ecosystem. Buckle up—we're going on a journey! 🚀
+
+---
+
+## 🏰 The Four Kingdoms of Dependencies
+
+Think of your `package.json` as a kingdom, and each type of dependency is a different realm with its own rules.
+
+### 1. **Dependencies** - The Royal Court 👑
+
+```json
+"dependencies": {
+  "react":  "^18.2.0",
+  "axios": "^1.6.0"
+}
+```
+
+**What they are:** The VIPs. These packages are **absolutely essential** for your code to run in production. Without them, your app crashes and burns.
+
+**When to use:** Any package that your code directly imports and needs at runtime.
+
+**The Rule:** These get installed automatically when someone runs `npm install` your package.
+
+---
+
+### 2. **DevDependencies** - The Workshop 🔧
+
+```json
+"devDependencies": {
+  "jest": "^29.0.0",
+  "eslint": "^8.0.0",
+  "typescript": "^5.0.0"
+}
+```
+
+**What they are:** The behind-the-scenes crew. Testing frameworks, linters, build tools, and type checkers that help you _develop_ but aren't needed when someone uses your package.
+
+**When to use:** Tools for development, testing, building, or linting.
+
+**The Rule:** These are **NOT** installed when someone installs your package as a dependency. They only install when you run `npm install` in your own project.
+
+**Pro tip:** If you're building a library, keep this lean. If you're building an application (the final product), this can be hefty!
+
+---
+
+### 3. **PeerDependencies** - The Diplomats 🤝
+
+```json
+"peerDependencies": {
+  "react": "^18.0.0",
+  "next": "^13.0.0 || ^14.0.0",
+  "react-hook-form": "^7.0.0"
+}
+```
+
+**What they are:** The "I expect YOU to bring this to the party" dependencies. Your library doesn't install them—instead, it says: _"Hey, I work with React 18. Make sure YOU have it installed in your project!"_
+
+**The "Aha!" Moment:** This is where my confusion started!
+
+When building a component library, my tech lead asked me to add `react`, `next`, and other packages as peer dependencies. Here's why:
+
+- **My library** is a React component library
+- It doesn't want to bundle its own copy of React (that would be wasteful and cause conflicts!)
+- Instead, it says: "I work with React 18. The app consuming me should provide React."
+
+**The react-hook-form mystery solved:** My component uses another library (let's call it `awesome-form-components`), which has `react-hook-form` as a peer dependency. Even though _I'm_ not directly using `react-hook-form`, the library I depend on expects the consuming application to have it installed. It's like a dependency chain of expectations!
+
+```
+My App → My Library → awesome-form-components (expects react-hook-form)
+                                   ↓
+                        My App must install react-hook-form!
+```
+
+**Real-world example:**
+
+```json
+// awesome-ui-components/package.json (your library)
+{
+  "name": "awesome-ui-components",
+  "version": "1.0.0",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "dependencies": {
+    "awesome-form-components": "^2.5.0"
+  }
+}
+```
+
+```json
+// awesome-form-components/package.json (library you depend on)
+{
+  "name": "awesome-form-components",
+  "version": "2.5.0",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-hook-form": "^7.0.0"
+  }
+}
+```
+
+Now when someone installs YOUR library, they need to install:
+
+- `react` (your peer dependency)
+- `react-dom` (your peer dependency)
+- `react-hook-form` (transitive peer dependency from `awesome-form-components`)
+
+**When to use:**
+
+- Building a **plugin or library** that works with a host framework (React, Next. js, Vue, etc.)
+- You want to avoid version conflicts
+- You want the consuming app to control which version is used
+
+**Modern npm behavior:** npm 7+ automatically installs peer dependencies, but **warns you** if there are version mismatches. Older versions would just warn without installing.
+
+---
+
+### 4. **OptionalDependencies** - The Bonus Features 🎁
+
+```json
+"optionalDependencies": {
+  "fsevents": "^2.3.0"
+}
+```
+
+**What they are:** The "nice to have" packages. If installation fails, npm doesn't throw an error—it just continues.
+
+**When to use:** Platform-specific optimizations (like `fsevents` for macOS file watching).
+
+**The Rule:** Your code should handle these dependencies potentially not being there!
+
+---
+
+## 🎭 The Transitive Dependency Drama
+
+Here's where things get _spicy_.
+
+**Transitive dependencies** (also called **indirect dependencies**) are the dependencies of your dependencies. They're like your friend's friends at a party—you didn't invite them, but they showed up anyway!
+
+```
+Your Project
+  ├── express (direct dependency)
+  │     ├── body-parser (transitive)
+  │     ├── accepts (transitive)
+  │     └── range-parser (transitive)
+  └── react (direct dependency)
+        └── loose-envify (transitive)
+```
+
+**The Good:** You don't have to manage them manually.  
+**The Bad:** They can bloat your `node_modules` to absurd sizes.  
+**The Ugly:** Security vulnerabilities can hide deep in the dependency tree.
+
+**Pro move:** Run `npm ls` to see your full dependency tree, or `npm ls --depth=0` to see only direct dependencies.
+
+---
+
+## 🔢 The Version Symphony: ^ vs ~ vs Exact
+
+Ever wonder what those symbols mean? They're not random! They control which versions npm can install.
+
+### **Caret (^) - The Optimist** 🎯
+
+```json
+"react": "^18.2.0"
+```
+
+**Allows:** Minor and patch updates  
+**Translation:** "I'm okay with `18.2.0`, `18.3.0`, `18.99.0`, but **NOT** `19.0.0`"  
+**Rule:** Compatible with everything except the first non-zero number
+
+```
+^18.2.0  → 18.2.0 to 18.x.x ✅
+^0.5.0   → 0.5.0 to 0.5.x ✅ (special case for 0.x.x)
+```
+
+**When to use:** Most of the time! Assumes packages follow [semantic versioning](https://semver.org/).
+
+---
+
+### **Tilde (~) - The Conservative** 🛡️
+
+```json
+"lodash": "~4.17.21"
+```
+
+**Allows:** Only patch updates  
+**Translation:** "I'll take `4.17.21`, `4.17.22`, `4.17.99`, but **NOT** `4.18.0`"
+
+```
+~4.17.21  → 4.17.x only ✅
+~4.17     → 4.17.x ✅
+~4        → 4.x.x ✅
+```
+
+**When to use:** When you want stability and fear breaking changes.
+
+---
+
+### **Exact Version - The Perfectionist** 🎯
+
+```json
+"next": "14.1.0"
+```
+
+**Allows:** Only that exact version  
+**Translation:** "14.1.0 or bust!"
+
+**When to use:**
+
+- Critical packages where updates broke things before
+- When reproducibility is crucial (though `package-lock.json` handles this better)
+
+---
+
+### **Range - The Flexible Friend** 🤸
+
+```json
+"typescript": ">=4.5.0 <5.0.0"
+```
+
+You can also use ranges for more control:
+
+- `>=1.2.7` - Greater than or equal to
+- `1.2.7 - 1.4.0` - Range (inclusive)
+- `*` or `x` - Any version (rarely recommended!)
+
+---
+
+## 🎓 The Grand Dependency Wisdom
+
+Here's your cheat sheet:
+
+| Type                     | Installed When?           | Use Case                                  |
+| ------------------------ | ------------------------- | ----------------------------------------- |
+| **dependencies**         | Always (production + dev) | Packages you import in your code          |
+| **devDependencies**      | Only in your project      | Build tools, testing, linting             |
+| **peerDependencies**     | By the consuming app      | Libraries that work with a host framework |
+| **optionalDependencies** | If available              | Platform-specific or optional features    |
+| **Transitive**           | Automatically             | Dependencies of your dependencies         |
+
+| Symbol    | Meaning               | Example            |
+| --------- | --------------------- | ------------------ |
+| **^**     | Minor + patch updates | `^1.2.3` → `1.x.x` |
+| **~**     | Patch updates only    | `~1.2.3` → `1.2.x` |
+| **None**  | Exact version         | `1.2.3` only       |
+| **Range** | Flexible range        | `>=1.0.0 <2.0.0`   |
+
+---
+
+## 🚀 Real-World Tips from the Trenches
+
+1. **Building a library? ** Use `peerDependencies` for framework packages (React, Vue, Angular). Don't bundle them!
+
+2. **Seeing duplicate packages?** Run `npm dedupe` to flatten your dependency tree.
+
+3. **Security alerts?** Run `npm audit` and `npm audit fix` regularly.
+
+4. **Lock it down:** Always commit `package-lock.json` or `yarn.lock`. It ensures everyone gets the same versions.
+
+5. **Check what's installed:** Use `npm ls <package-name>` to see which version is actually installed and where it comes from.
+
+6. **Peer dependency warnings? ** Don't ignore them! They usually indicate version mismatches that could cause runtime errors.
+
+---
+
+## 🔮 What's Next? Coming Soon: Part 2
+
+Understanding dependencies is just the first step. But what happens when you install a perfectly good package and your build suddenly breaks with cryptic errors like:
+
+```
+Error: Unexpected token 'export'
+SyntaxError: Cannot use import statement outside a module
+```
+
+You check your `package.json`—everything looks fine. You check your code—no issues. So what's going wrong?
+
+Welcome to the world of **module transpilation**! 🏗️
+
+In Part 2 of this series, we'll dive into:
+
+- Why some npm packages need special treatment during your build
+- What transpiling actually means (and when you need it)
+- The mystery of `transpilePackages` and `next-transpile-modules`
+- ESM vs CommonJS: The module format wars
+- How to fix those frustrating build errors once and for all
+
+**Stay tuned! ** The transpile adventure awaits. 🎢
+
+---
+
+## 🎬 The End... or Just the Beginning?
+
+Dependencies seemed simple until they weren't. But now you're armed with knowledge! The next time someone mentions peer dependencies or transitive dependencies, you'll nod knowingly instead of frantically Googling.
+
+Remember: Every confusing PR comment is a learning opportunity in disguise. 🌟
+
+---
+
+**Have questions or dependency horror stories?** Drop them in the comments! Let's learn together. 🚀
+
+**Found this helpful?** Follow me for Part 2 where we tackle the transpilation mystery!
+
+---
+
+## 📚 Further Reading
+
+- [npm Documentation - package.json](https://docs.npmjs.com/cli/v10/configuring-npm/package-json)
+- [Semantic Versioning](https://semver.org/)
+- [Understanding peer dependencies](https://nodejs.org/en/blog/npm/peer-dependencies)
+- [npm dependency types explained](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#dependencies)
+
+---
+
+_Part 2: "The Transpile Trap: Why Your Build Breaks and How to Fix It" - Coming Soon!_
