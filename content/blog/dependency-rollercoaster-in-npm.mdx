@@ -67,7 +67,7 @@ Recently, I took my nephew to an amusement park and derived the analogy so that 
 }
 ```
 
-**What they are:** This is the "Requirement" sign at the entrance of a ride. Imagine a water slide that says: _"We provide the slide, but YOU must bring your own swimsuit."_
+**What?** This is the "Requirement" sign at the entrance of a ride. Imagine a water slide that says: _"We provide the slide, but YOU must bring your own swimsuit."_
 
 **The "Aha!" Moment:** This is where I got stuck!
 
@@ -77,13 +77,16 @@ Instead, we just check at the gate: "Do you have a swimsuit (React 19)?" Our lib
 
 **The Chain Mystery:** This is the "Hidden Requirement" through **Transitive Peer Dependencies**.
 
-If our slide uses a specific floatie (another library say `awesome-form-components`), and that floatie requires a pump (`react-hook-form`), the guest suddenly needs both! Even though our library doesn't use the pump directly, the **consuming application** must install it.
+If our slide uses a specific floatie (another library say `awesome-form-components`), and that floatie requires a pump (`react-hook-form`), the guest suddenly needs both! Even though our library doesn't use the `react-hook-form`(pump as per our analogy) directly, the **consuming application** must install it.
 
 **The Dependency Chain:**
 
 ```shell
-Main App → My Library → awesome-form-components (requires react-hook-form as peer)
-                                  ↓
+Main App (The Guest)
+  └── My Library (The Slide)
+        └── awesome-form-components (The Floatie)
+              └── [PEER] react-hook-form (The Pump) 🚩
+                             ↓
 Result: Main App must install react-hook-form
 ```
 
@@ -170,4 +173,4 @@ In Part 2, I’ll share my insights into the technical "wiring" of our project:
 - **The Short Circuit:** Why our build breaks even when our code logic is perfect.
 - **The Heavy-Duty Adapter:** Solving the mystery of `transpilePackages`.
 
-**Stay tuned! We’re about to fix the wiring next. ⚡**
+**Stay tuned! We’re about to fix the wiring next ⚡. Till then Pranipat🙏**
