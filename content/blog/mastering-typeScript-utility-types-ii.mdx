@@ -1,0 +1,727 @@
+---
+title: 'Mastering TypeScript Utility Types: Part 2 — The Transformers & Type Thieves'
+description: 'From brittle test mocks to type-safe state machines—how Partial, Exclude, ReturnType, and Parameters eliminate manual type definitions.'
+date: 2026-01-24
+tags: ['typescript', 'web development', 'react', 'nextjs']
+---
+
+If you recall in [Part 1](/blog/mastering-ts-utility-1), we covered the basics—`Record`, `NonNullable`, `Pick`, and `Omit`. The "sculptors" that help us shape our types.
+
+Today? We're going deeper.
+
+I remember the first time I used `Partial<T>` in a test utility. Thought it was neat. Then I discovered `ReturnType<T>` and `Parameters<T>`. Post this I haven't manually typed a function's return value since. These utilities don't just save us typing—they make it impossible for our types to drift out of sync with our actual code.
+
+Part 2 is all about the **Transformers & Type Thieves** so to say🤠. Utilities that automatically change existing types or straight-up "steal" type information from our functions.
+
+```shell
+Mental Model:
+
+TRANSFORMERS           TYPE THIEVES
+-----------            ------------
+Partial<T>      →      ReturnType<T>
+Required<T>     →      Parameters<T>
+Exclude<T, U>
+Extract<T, U>
+
+Transform what         Steal from what
+you already have       already exists
+```
+
+---
+
+## The Transformers
+
+### 1. [`Partial<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype)
+
+**Here's the thing that used to drive me crazy:**
+
+Writing tests without `Partial` is painful.
+
+```typescript
+// We've got this complex interface
+interface FetchOptions {
+  timeout: number;
+  retries: number;
+  cache: 'force-cache' | 'no-store' | 'default';
+  headers: Record<string, string>;
+}
+
+// And every single test needs ALL of it
+function fetchData(url: string, options: FetchOptions) {
+  // ...implemenetation
+}
+
+// So we end up doing this:
+fetchData('/api/users', {
+  timeout: 5000,
+  retries: 3,
+  cache: 'default',
+  headers: {},
+});
+// Like... we literally only care about timeout here 😭
+```
+
+In every test file we have to copy-paste which was really tedious. And when we add a new property to that interface? Cool, now go update 47 test files.
+
+**Here's what changed everything:**
+
+```typescript
+// Just make everything optional and use defaults
+function fetchData(url: string, options: Partial<FetchOptions> = {}) {
+  const defaults: FetchOptions = {
+    timeout: 5000,
+    retries: 3,
+    cache: 'default',
+    headers: {},
+  };
+
+  const finalOptions = { ...defaults, ...options };
+  // ...implementation
+}
+
+// Now in tests:
+fetchData('/api/users', { timeout: 10000 });
+// ✅ Done. Just what we need.
+```
+
+`Partial<T>` literally just makes every property optional. It's like adding `?` after every field. But we don't have to type it all out.
+
+**How we actually use this in our projects(actual code is obviously obfuscated):**
+
+```typescript
+type TestOptions = {
+  timeout: number;
+  retries: number;
+  mockData: boolean;
+  verbose: boolean;
+};
+
+const defaultTestOptions: TestOptions = {
+  timeout: 5000,
+  retries: 3,
+  mockData: false,
+  verbose: false,
+};
+
+export const runTest = async (
+  testName: string,
+  testFn: () => Promise<void>,
+  options?: Partial<TestOptions>, // ← Magic happens here
+): Promise<TestResult> => {
+  const finalOptions = {
+    ...defaultTestOptions,
+    ...options,
+  };
+
+  // ... rest of implementation
+};
+
+// Clean. Simple. Beautiful.
+await runTest('user authentication', testUserAuth);
+// or when we need to override something:
+await runTest('user authentication', testUserAuth, { verbose: true });
+```
+
+**Real stuff we can build with this:**
+
+1. **Mock factories for tests:**
+
+```typescript
+function createMockDOMRect(overrides: Partial<DOMRect> = {}): DOMRect {
+  return {
+    bottom: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+    ...overrides,
+  };
+}
+
+// Just override what we need:
+const rect = createMockDOMRect({ bottom: 100, width: 200 });
+```
+
+2. **Update functions (partial state updates):**
+
+```typescript
+function updateUserProfile(id: string, updates: Partial<UserProfile>) {
+  const currentUser = getUserById(id);
+  return { ...currentUser, ...updates };
+}
+
+// Clean partial updates:
+updateUserProfile('123', { email: 'new@email.com' });
+```
+
+**When to reach for it:** Anytime we've got sensible defaults and want to override just what we need.
+
+---
+
+### 2. [`Required<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#requiredtype) - "Partial's Strict Twin"
+
+If `Partial` is about flexibility, `Required` is about validation. Think of it like a Security Checkpoint. You might start with a "loose" object where everything is optional (like a web form while the user is still typing). But before you hit "Submit" and send that data to your database, you need to ensure everyone has their ID and tickets ready.
+
+Here's how I generally use it to create a "Gatekeeper" for our data:
+
+```typescript
+interface UserRegistrationForm {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
+/**
+ * The Gatekeeper:
+ * Using a "Type Predicate" (form is Required<...>)
+ */
+function validateRegistration(
+  form: UserRegistrationForm,
+): form is Required<UserRegistrationForm> {
+  // We check if all fields actually have values
+  return !!(form.name && form.email && form.password && form.confirmPassword);
+}
+
+function submitRegistration(form: Required<UserRegistrationForm>) {
+  // TypeScript knows ALL fields exist here.
+  // No more optional chaining (form.name?) or 'if' checks needed!
+  console.log(form.name.toUpperCase());
+}
+```
+
+**The Secret Sauce: The Type Predicate (`is`)**
+
+You'll notice that strange syntax in the return type: `form is Required<UserRegistrationForm>`. This is called a **[Type Predicate](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates)**. Normally, a function returns `true` or `false`, and TypeScript just sees it as a simple `boolean`. But by using `is`, you are signing a contract with the compiler. You're saying:
+
+"Hey TypeScript, if this function returns `true`, I promise you that this `form` variable is no longer optional—it is now officially `Required`."
+
+**Why this is a game-changer:** Without that `is` keyword, even if your function returned `true`, TypeScript would still be worried that `name` might be `undefined` inside the next block of code. The Type Predicate "promotes" your data from untrusted to fully verified, allowing you to write much cleaner logic in your success handlers.
+
+**When to reach for it:**
+
+- Final form submissions
+- Validating API payloads before processing
+- Turning "loose" user input into "strict" system data
+
+---
+
+## The Bouncer & The Selector
+
+### 3. [`Exclude<T, U>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#excludeuniontype-excludedmembers)
+
+**The problem:**
+
+We've got a union representing all possible states. But some functions can't handle all of them.
+
+```typescript
+// Every page type in our app
+type PageType =
+  | 'home'
+  | 'about'
+  | 'products'
+  | 'blog'
+  | 'contact'
+  | 'admin-dashboard'
+  | 'admin-settings';
+
+// Public routes shouldn't show admin stuff
+// So we do this:
+type PublicPageType = 'home' | 'about' | 'products' | 'blog' | 'contact';
+// ❌ Now we've got duplication. PageType changes? Gotta update this too.
+```
+
+Not ideal.
+
+**Better way:**
+
+```typescript
+// Just filter out what we don't want
+type PublicPageType = Exclude<PageType, 'admin-dashboard' | 'admin-settings'>;
+// Result: 'home' | 'about' | 'products' | 'blog' | 'contact'
+```
+
+`Exclude<T, U>` removes types from a union. Think of it like `Array.filter()` but for types. **It keeps everything EXCEPT what you specify.**
+
+**How we use this in routing:**
+
+```typescript
+const validPageTypes = [
+  'home',
+  'about',
+  'products',
+  'blog',
+  'contact',
+  'admin-dashboard',
+  'admin-settings',
+] as const;
+
+type AllPageTypes = (typeof validPageTypes)[number];
+
+// Hide admin from public
+type PublicPageTypes = Exclude<
+  AllPageTypes,
+  'admin-dashboard' | 'admin-settings'
+>;
+
+// Validation helper
+function isPublicPageType(pageType: string): pageType is PublicPageTypes {
+  const publicTypes: PublicPageTypes[] = [
+    'home',
+    'about',
+    'products',
+    'blog',
+    'contact',
+  ];
+  return publicTypes.includes(pageType as PublicPageTypes);
+}
+```
+
+**Other places this saves us:**
+
+1. **State machines (removing final states):**
+
+   ```typescript
+   type OrderStatus =
+     | 'pending'
+     | 'processing'
+     | 'shipped'
+     | 'delivered'
+     | 'cancelled';
+
+   // Only active orders can be modified
+   type ActiveOrderStatus = Exclude<OrderStatus, 'cancelled' | 'delivered'>;
+
+   function canModifyOrder(status: OrderStatus): status is ActiveOrderStatus {
+     const activeStatuses: ActiveOrderStatus[] = [
+       'pending',
+       'processing',
+       'shipped',
+     ];
+     return activeStatuses.includes(status as ActiveOrderStatus);
+   }
+   ```
+
+2. **Event filtering:**
+
+   ```typescript
+   type AppEvent =
+     | 'user-login'
+     | 'user-logout'
+     | 'page-view'
+     | 'button-click'
+     | 'form-submit'
+     | 'error-occurred';
+
+   // Analytics only (skip errors)
+   type AnalyticsEvent = Exclude<AppEvent, 'error-occurred'>;
+   ```
+
+---
+
+### 4. [`Extract<T, U>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#extracttype-union) - "The Union Selector" ✅
+
+`Extract` is `Exclude`'s opposite twin. **It keeps ONLY what you specify.**
+
+```typescript
+type PageType =
+  | 'home'
+  | 'about'
+  | 'products'
+  | 'blog'
+  | 'contact'
+  | 'admin-dashboard'
+  | 'admin-settings';
+
+// Get just the admin pages
+type AdminPageType = Extract<PageType, `admin-${string}`>;
+// Result: 'admin-dashboard' | 'admin-settings'
+
+// Or be explicit:
+type AdminPageType = Extract<PageType, 'admin-dashboard' | 'admin-settings'>;
+```
+
+**Another useful pattern:**
+
+```typescript
+// Extract only string keys from an object
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+
+type StringKeys = Extract<keyof User, 'name' | 'email'>;
+// Result: 'name' | 'email'
+```
+
+**Easy way to remember:**
+
+- **`Exclude<T, U>`** = everything EXCEPT these → "filter out"
+- **`Extract<T, U>`** = ONLY these → "select"
+
+---
+
+## The Type Thieves
+
+Okay, this is where it gets fun. Instead of writing types manually, we're gonna make TypeScript **steal** them from existing code.
+
+### 5. [`ReturnType<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#returntypetype) - "The Return Stealer" 🕵️
+
+**The old way (painful):**
+
+```typescript
+function getProductData(id: string) {
+  return {
+    id,
+    name: 'Widget',
+    price: 99.99,
+    inStock: true,
+    metadata: {
+      weight: 1.5,
+      dimensions: { width: 10, height: 5, depth: 3 },
+    },
+  };
+}
+
+// Need this type somewhere else...
+// So we do this:
+interface ProductData {
+  id: string;
+  name: string;
+  price: number;
+  inStock: boolean;
+  metadata: {
+    weight: number;
+    dimensions: {
+      width: number;
+      height: number;
+      depth: number;
+    };
+  };
+}
+// ❌ Duplication. Change the function? Update this interface too.
+```
+
+This is asking for bugs.
+
+**The new way (beautiful):**
+
+```typescript
+function getProductData(id: string) {
+  return {
+    id,
+    name: 'Widget',
+    price: 99.99,
+    inStock: true,
+    metadata: {
+      weight: 1.5,
+      dimensions: { width: 10, height: 5, depth: 3 },
+    },
+  };
+}
+
+// Just steal the return type:
+type ProductData = ReturnType<typeof getProductData>;
+// ✅ Done. **Automatically synced forever.**
+```
+
+Changed the function? **The type updates automatically.** No manual work.
+
+**Real example from our API layer:**
+
+For this to work cleanly, we need a **discriminated union** where success and error states are distinct:
+
+```typescript
+// API call with discriminated union return type
+async function fetchProductsFromAPI(productIds: string[]) {
+  try {
+    const response = await fetch('/api/products', {
+      method: 'POST',
+      body: JSON.stringify({ productIds }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    // Success case
+    return { success: true, products: data.products ?? [] } as const;
+  } catch (err) {
+    // Error case
+    return { success: false, error: err as Error } as const;
+  }
+}
+
+// Steal the return type:
+type ApiProductsResponse = Awaited<ReturnType<typeof fetchProductsFromAPI>>;
+// Result: { success: true, products: Product[] } | { success: false, error: Error }
+
+// Extract just the success case:
+type SuccessResponse = Extract<ApiProductsResponse, { success: true }>;
+// **TypeScript now knows:** { success: true, products: Product[] }
+
+// Extract just the error case:
+type ErrorResponse = Extract<ApiProductsResponse, { success: false }>;
+// **TypeScript now knows:** { success: false, error: Error }
+```
+
+**Where else we use this:**
+
+1. **Redux action creators:**
+
+   ```typescript
+   function createProductAction(id: string, name: string) {
+     return {
+       type: 'ADD_PRODUCT' as const,
+       payload: { id, name },
+     };
+   }
+
+   type ProductAction = ReturnType<typeof createProductAction>;
+   // Result: { type: 'ADD_PRODUCT'; payload: { id: string; name: string } }
+
+   // Reducer **automatically knows the shape:**
+   function productReducer(state: State, action: ProductAction) {
+     // TypeScript knows action.type and action.payload
+   }
+   ```
+
+2. **Form validators:**
+
+   ```typescript
+   function validateUserForm(form: FormData) {
+     const errors: string[] = [];
+     if (!form.email) errors.push('Email required');
+     if (!form.password) errors.push('Password required');
+
+     return {
+       isValid: errors.length === 0,
+       errors,
+     };
+   }
+
+   type ValidationResult = ReturnType<typeof validateUserForm>;
+
+   // Use in component:
+   const [validation, setValidation] = useState<ValidationResult | null>(null);
+   ```
+
+**When to use it:** Literally anytime we need a function's return type elsewhere. **One source of truth.**
+
+**Bonus - combine with `Awaited` for async:**
+
+```typescript
+async function fetchUser(id: string) {
+  const response = await fetch(`/api/users/${id}`);
+  return response.json();
+}
+
+// Get the resolved type (unwrap the Promise):
+type User = Awaited<ReturnType<typeof fetchUser>>;
+```
+
+---
+
+### 6. [`Parameters<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#parameterstype) - "The Arguments Thief" 🎯
+
+**Same problem, different angle:**
+
+```typescript
+function createUser(
+  name: string,
+  email: string,
+  age: number,
+  role: 'admin' | 'user',
+) {
+  // ... implementation
+}
+
+// Need these param types somewhere else
+// Manual way:
+type CreateUserParams = {
+  name: string;
+  email: string;
+  age: number;
+  role: 'admin' | 'user';
+};
+// ❌ Function signature changes? Update this manually.
+```
+
+Nope.
+
+**Better:**
+
+```typescript
+function createUser(
+  name: string,
+  email: string,
+  age: number,
+  role: 'admin' | 'user',
+) {
+  // ... implementation
+}
+
+// Steal the params:
+type CreateUserParams = Parameters<typeof createUser>;
+// Result: [string, string, number, 'admin' | 'user']
+
+// Grab individual ones:
+type UserName = Parameters<typeof createUser>[0]; // string
+type UserRole = Parameters<typeof createUser>[3]; // 'admin' | 'user'
+```
+
+**Real usage - wrapper functions:**
+
+This is where `Parameters` really shines—when we need to **preserve exact type signatures:**
+
+```typescript
+function logAndExecute<T extends (...args: any[]) => any>(
+  fn: T,
+  ...args: Parameters<T>
+): ReturnType<T> {
+  console.log(`Calling ${fn.name} with`, args);
+  return fn(...args);
+}
+
+// Usage:
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+const result = logAndExecute(add, 5, 10);
+// **TypeScript automatically knows:**
+// - Parameters<typeof add> = [number, number]
+// - ReturnType<typeof add> = number
+```
+
+**Another example - event handlers:**
+
+```typescript
+const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+  // ...
+};
+
+type SubmitEventParams = Parameters<typeof handleSubmit>;
+// Result: [React.FormEvent<HTMLFormElement>]
+// Use when passing the handler around
+```
+
+**When to use it:** Anytime we need function parameter types. **Stop duplicating.**
+
+---
+
+## Bonus Round: Combining These
+
+**Pattern 1: Type-safe event emitters**
+
+```typescript
+class EventBus {
+  on(event: 'user-login', handler: (user: User) => void): void;
+  on(event: 'user-logout', handler: () => void): void;
+  on(event: string, handler: Function): void {
+    // implementation
+  }
+}
+
+// Extract handler type:
+type LoginHandler = Parameters<EventBus['on']>[1];
+// Result: (user: User) => void
+```
+
+**Pattern 2: Runtime + compile-time validation**
+
+Zod example from Part 1:
+
+```typescript
+import { z } from 'zod';
+
+const UserSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  age: z.number().min(18),
+});
+
+type User = z.infer<typeof UserSchema>; // Zod steals the type
+
+function submitUser(data: User) {
+  const validated = UserSchema.parse(data); // Runtime check
+  return validated;
+}
+
+type SubmitUserReturn = ReturnType<typeof submitUser>;
+// Result: User (validated)
+```
+
+**Both TypeScript AND runtime safety.** Beautiful.
+
+---
+
+## Quick Cheat Sheet
+
+| Utility         | Does What                  | Mental Model                        |
+| --------------- | -------------------------- | ----------------------------------- |
+| `Partial<T>`    | Makes everything optional  | Transform: all props → optional     |
+| `Required<T>`   | Makes everything required  | Transform: all props → required     |
+| `Exclude<T, U>` | Remove types from union    | Filter OUT these types              |
+| `Extract<T, U>` | Keep only matching types   | SELECT only these types             |
+| `ReturnType<T>` | Steal function return type | Thief: grab what function returns   |
+| `Parameters<T>` | Steal function params      | Thief: grab what function accepts   |
+| `Awaited<T>`    | Unwrap Promise             | Thief: grab Promise's resolved type |
+
+---
+
+## That's It
+
+**What we covered:**
+
+- ✅ `Partial<T>` for flexible APIs and tests
+- ✅ `Required<T>` for validation
+- ✅ `Exclude<T, U>` for filtering unions
+- ✅ `Extract<T, U>` for selecting from unions
+- ✅ `ReturnType<T>` for stealing return types
+- ✅ `Parameters<T>` for stealing param types
+
+**Main points:**
+
+1. Stop writing types twice. **Let TypeScript infer.**
+2. `Partial` + defaults = clean, flexible code
+3. `Exclude`/`Extract` = type-safe state machines
+4. `ReturnType`/`Parameters` = **single source of truth**
+
+**Homework:**
+
+1. 🔍 Find one test that needs all params → Use `Partial<T>`
+2. 🎯 Replace one manual interface → Use `ReturnType<typeof fn>`
+3. 🚫 Find one union that needs filtering → Use `Exclude<T, U>`
+
+---
+
+## Up Next: Part 3 🚀
+
+Built-in utilities are great. But sometimes they're not enough.
+
+**Part 3 covers custom utilities:**
+
+- **`DeepPartial<T>`** - When `Partial` only goes one level
+- **`DeepReadonly<T>`** - Immutability all the way down
+- **`Polymorphic<T, Props>`** - The holy grail for flexible React components
+- **Template Literal Types** - Type-safe string patterns
+- **Building our own** - Mapped types, conditional types, `infer`
+
+We'll build `DeepPartial` from scratch, break down the `Polymorphic` pattern step-by-step, and explore what powers libraries like Radix UI and Chakra UI.
+
+See you then. Happy typing! Pranipat 🙏! ☮️
+
+---
+
+_Questions? Using these in production? Let me know in the comments!_ 🚀
+
+---
