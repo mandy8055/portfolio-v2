@@ -162,7 +162,7 @@ updateUserProfile('123', { email: 'new@email.com' });
 
 ---
 
-### 2. [`Required<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#requiredtype) - "Partial's Strict Twin"
+### 2. [`Required<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#requiredtype)
 
 If `Partial` is about flexibility, `Required` is about validation. Think of it like a Security Checkpoint. You might start with a "loose" object where everything is optional (like a web form while the user is still typing). But before you hit "Submit" and send that data to your database, you need to ensure everyone has their ID and tickets ready.
 
@@ -285,47 +285,51 @@ function isPublicPageType(pageType: string): pageType is PublicPageTypes {
 
 1. **State machines (removing final states):**
 
-   ```typescript
-   type OrderStatus =
-     | 'pending'
-     | 'processing'
-     | 'shipped'
-     | 'delivered'
-     | 'cancelled';
+```typescript
+type OrderStatus =
+  | 'pending'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled';
 
-   // Only active orders can be modified
-   type ActiveOrderStatus = Exclude<OrderStatus, 'cancelled' | 'delivered'>;
+// Only active orders can be modified
+type ActiveOrderStatus = Exclude<OrderStatus, 'cancelled' | 'delivered'>;
 
-   function canModifyOrder(status: OrderStatus): status is ActiveOrderStatus {
-     const activeStatuses: ActiveOrderStatus[] = [
-       'pending',
-       'processing',
-       'shipped',
-     ];
-     return activeStatuses.includes(status as ActiveOrderStatus);
-   }
-   ```
+function canModifyOrder(status: OrderStatus): status is ActiveOrderStatus {
+  const activeStatuses: ActiveOrderStatus[] = [
+    'pending',
+    'processing',
+    'shipped',
+  ];
+  return activeStatuses.includes(status as ActiveOrderStatus);
+}
+```
 
 2. **Event filtering:**
 
-   ```typescript
-   type AppEvent =
-     | 'user-login'
-     | 'user-logout'
-     | 'page-view'
-     | 'button-click'
-     | 'form-submit'
-     | 'error-occurred';
+```typescript
+type AppEvent =
+  | 'user-login'
+  | 'user-logout'
+  | 'page-view'
+  | 'button-click'
+  | 'form-submit'
+  | 'error-occurred';
 
-   // Analytics only (skip errors)
-   type AnalyticsEvent = Exclude<AppEvent, 'error-occurred'>;
-   ```
+// Analytics only (skip errors)
+type AnalyticsEvent = Exclude<AppEvent, 'error-occurred'>;
+```
 
 ---
 
-### 4. [`Extract<T, U>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#extracttype-union) - "The Union Selector" ✅
+### 4. [`Extract<T, U>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#extracttype-union)
 
-`Extract` is `Exclude`'s opposite twin. **It keeps ONLY what you specify.**
+If `Exclude` is a bouncer kicking types out, `Extract` is a magnet. We hover it over a giant pile of types, and it only pulls out the ones that match our pattern.
+
+**The "Wildcard" Pattern:**
+
+This is where TypeScript gets really smart. Instead of picking types one by one, we can use Template Literal Types to "search" for a pattern.
 
 ```typescript
 type PageType =
@@ -337,18 +341,18 @@ type PageType =
   | 'admin-dashboard'
   | 'admin-settings';
 
-// Get just the admin pages
+// Using a "Wildcard" to get just the admin pages
 type AdminPageType = Extract<PageType, `admin-${string}`>;
 // Result: 'admin-dashboard' | 'admin-settings'
-
-// Or be explicit:
-type AdminPageType = Extract<PageType, 'admin-dashboard' | 'admin-settings'>;
 ```
 
-**Another useful pattern:**
+**Why this is "Human-Friendly" code:**
+
+We are future-proofing our app. If we add `'admin-users'` or `'admin-reports'` to our `PageType` next month, our `AdminPageType` will automatically "magnetize" them. We don't have to change our code in two places!
+
+**Another useful pattern (Filtering Keys):**
 
 ```typescript
-// Extract only string keys from an object
 interface User {
   id: number;
   name: string;
@@ -356,14 +360,15 @@ interface User {
   createdAt: Date;
 }
 
-type StringKeys = Extract<keyof User, 'name' | 'email'>;
+// Only pull out the keys we want to display in a specific UI
+type DisplayKeys = Extract<keyof User, 'name' | 'email'>;
 // Result: 'name' | 'email'
 ```
 
-**Easy way to remember:**
+**The Cheat Sheet Memory Aid:**
 
-- **`Exclude<T, U>`** = everything EXCEPT these → "filter out"
-- **`Extract<T, U>`** = ONLY these → "select"
+- `Exclude<T, U>` → The Filter. "Give me everything except these."
+- `Extract<T, U>` → The Magnet. "Give me only what matches this pattern."
 
 ---
 
