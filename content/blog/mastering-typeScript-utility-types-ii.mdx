@@ -5,13 +5,13 @@ date: 2026-01-24
 tags: ['typescript', 'web development', 'react', 'nextjs']
 ---
 
-If you recall in [Part 1](/blog/mastering-ts-utility-1), we covered the basics—`Record`, `NonNullable`, `Pick`, and `Omit`. The "sculptors" that help us shape our types.
+If you recall in [Part 1](https://manuj-sankrit-8055.vercel.app/blog/mastering-typeScript-utility-types-i), we covered the basics—`Record`, `NonNullable`, `Pick`, and `Omit`. The "sculptors" that help us shape our types.
 
 Today? We're going deeper.
 
 I remember the first time I used `Partial<T>` in a test utility. Thought it was neat. Then I discovered `ReturnType<T>` and `Parameters<T>`. Post this I haven't manually typed a function's return value since. These utilities don't just save us typing—they make it impossible for our types to drift out of sync with our actual code.
 
-Part 2 is all about the **Transformers & Type Thieves** so to say🤠. Utilities that automatically change existing types or straight-up "steal" type information from our functions.
+In this article, I will share my insights which is all about the **Transformers & Type Thieves**🤠. Utilities that automatically change existing types or straight-up "steal" type information from our functions.
 
 ```shell
 Mental Model:
@@ -24,7 +24,7 @@ Exclude<T, U>
 Extract<T, U>
 
 Transform what         Steal from what
-you already have       already exists
+we already have       already exists
 ```
 
 ---
@@ -48,7 +48,7 @@ interface FetchOptions {
 
 // And every single test needs ALL of it
 function fetchData(url: string, options: FetchOptions) {
-  // ...implemenetation
+  // ...implementation
 }
 
 // So we end up doing this:
@@ -86,7 +86,7 @@ fetchData('/api/users', { timeout: 10000 });
 
 `Partial<T>` literally just makes every property optional. It's like adding `?` after every field. But we don't have to type it all out.
 
-**How we actually use this in our projects(actual code is obviously obfuscated):**
+**How we actually use this in our projects:**
 
 ```typescript
 type TestOptions = {
@@ -106,7 +106,7 @@ const defaultTestOptions: TestOptions = {
 export const runTest = async (
   testName: string,
   testFn: () => Promise<void>,
-  options?: Partial<TestOptions>, // ← Magic happens here
+  options?: Partial<TestOptions>, // ← Here
 ): Promise<TestResult> => {
   const finalOptions = {
     ...defaultTestOptions,
@@ -164,9 +164,7 @@ updateUserProfile('123', { email: 'new@email.com' });
 
 ### 2. [`Required<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#requiredtype)
 
-If `Partial` is about flexibility, `Required` is about validation. Think of it like a Security Checkpoint. You might start with a "loose" object where everything is optional (like a web form while the user is still typing). But before you hit "Submit" and send that data to your database, you need to ensure everyone has their ID and tickets ready.
-
-Here's how I generally use it to create a "Gatekeeper" for our data:
+If `Partial` is about flexibility, `Required` is about validation. I thought of it like a Security Checkpoint. We might start with a "loose" object where everything is optional (like a web form while the user is still typing). But before we hit "Submit" and send that data to our database, we need to ensure everyone has their ID and tickets ready.
 
 ```typescript
 interface UserRegistrationForm {
@@ -196,11 +194,11 @@ function submitRegistration(form: Required<UserRegistrationForm>) {
 
 **The Secret Sauce: The Type Predicate (`is`)**
 
-You'll notice that strange syntax in the return type: `form is Required<UserRegistrationForm>`. This is called a **[Type Predicate](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates)**. Normally, a function returns `true` or `false`, and TypeScript just sees it as a simple `boolean`. But by using `is`, you are signing a contract with the compiler. You're saying:
+You'll notice that strange syntax in the return type: `form is Required<UserRegistrationForm>`. This is called a **[Type Predicate](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates)**. Normally, a function returns `true` or `false`, and TypeScript just sees it as a simple `boolean`. But by using `is`, we are signing a contract with the compiler. We're saying:
 
 "Hey TypeScript, if this function returns `true`, I promise you that this `form` variable is no longer optional—it is now officially `Required`."
 
-**Why this is a game-changer:** Without that `is` keyword, even if your function returned `true`, TypeScript would still be worried that `name` might be `undefined` inside the next block of code. The Type Predicate "promotes" your data from untrusted to fully verified, allowing you to write much cleaner logic in your success handlers.
+**Why this is a game-changer:** Without that `is` keyword, even if our function returned `true`, TypeScript would still be worried that `name` might be `undefined` inside the next block of code. The Type Predicate "promotes" our data from untrusted to fully verified, allowing us to write much cleaner logic in our success handlers.
 
 **When to reach for it:**
 
@@ -209,8 +207,6 @@ You'll notice that strange syntax in the return type: `form is Required<UserRegi
 - Turning "loose" user input into "strict" system data
 
 ---
-
-## The Bouncer & The Selector
 
 ### 3. [`Exclude<T, U>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#excludeuniontype-excludedmembers)
 
@@ -242,10 +238,12 @@ Not ideal.
 ```typescript
 // Just filter out what we don't want
 type PublicPageType = Exclude<PageType, 'admin-dashboard' | 'admin-settings'>;
+// We can also do it like which is much cleaner
+// type PublicPageType = Exclude<PageType, 'admin-${string}`>;
 // Result: 'home' | 'about' | 'products' | 'blog' | 'contact'
 ```
 
-`Exclude<T, U>` removes types from a union. Think of it like `Array.filter()` but for types. **It keeps everything EXCEPT what you specify.**
+`Exclude<T, U>` removes types from a union. Think of it like `Array.filter()` but for types. **It keeps everything EXCEPT what we specify.**
 
 **How we use this in routing:**
 
@@ -263,10 +261,7 @@ const validPageTypes = [
 type AllPageTypes = (typeof validPageTypes)[number];
 
 // Hide admin from public
-type PublicPageTypes = Exclude<
-  AllPageTypes,
-  'admin-dashboard' | 'admin-settings'
->;
+type PublicPageType = Exclude<PageType, `admin-${string}`>;
 
 // Validation helper
 function isPublicPageType(pageType: string): pageType is PublicPageTypes {
@@ -318,7 +313,7 @@ type AppEvent =
   | 'error-occurred';
 
 // Analytics only (skip errors)
-type AnalyticsEvent = Exclude<AppEvent, 'error-occurred'>;
+type AnalyticsEvent = Exclude<AppEvent, `error-${string}`>;
 ```
 
 ---
@@ -365,18 +360,13 @@ type DisplayKeys = Extract<keyof User, 'name' | 'email'>;
 // Result: 'name' | 'email'
 ```
 
-**The Cheat Sheet Memory Aid:**
-
-- `Exclude<T, U>` → The Filter. "Give me everything except these."
-- `Extract<T, U>` → The Magnet. "Give me only what matches this pattern."
-
 ---
 
 ## The Type Thieves
 
 Okay, this is where it gets fun. Instead of writing types manually, we're gonna make TypeScript **steal** them from existing code.
 
-### 5. [`ReturnType<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#returntypetype) - "The Return Stealer" 🕵️
+### 5. [`ReturnType<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#returntypetype)
 
 **The old way (painful):**
 
@@ -410,10 +400,8 @@ interface ProductData {
     };
   };
 }
-// ❌ Duplication. Change the function? Update this interface too.
+// ❌ Duplication. Change the function? Update this interface too. This is asking for bugs.
 ```
-
-This is asking for bugs.
 
 **The new way (beautiful):**
 
@@ -440,7 +428,7 @@ Changed the function? **The type updates automatically.** No manual work.
 
 **Real example from our API layer:**
 
-For this to work cleanly, we need a **discriminated union** where success and error states are distinct:
+For this to work cleanly, we need a [**discriminated union**](https://dev.to/darkmavis1980/what-are-typescript-discriminated-unions-5hbb) where success and error states are distinct:
 
 ```typescript
 // API call with discriminated union return type
@@ -481,42 +469,42 @@ type ErrorResponse = Extract<ApiProductsResponse, { success: false }>;
 
 1. **Redux action creators:**
 
-   ```typescript
-   function createProductAction(id: string, name: string) {
-     return {
-       type: 'ADD_PRODUCT' as const,
-       payload: { id, name },
-     };
-   }
+```typescript
+function createProductAction(id: string, name: string) {
+  return {
+    type: 'ADD_PRODUCT' as const,
+    payload: { id, name },
+  };
+}
 
-   type ProductAction = ReturnType<typeof createProductAction>;
-   // Result: { type: 'ADD_PRODUCT'; payload: { id: string; name: string } }
+type ProductAction = ReturnType<typeof createProductAction>;
+// Result: { type: 'ADD_PRODUCT'; payload: { id: string; name: string } }
 
-   // Reducer **automatically knows the shape:**
-   function productReducer(state: State, action: ProductAction) {
-     // TypeScript knows action.type and action.payload
-   }
-   ```
+// Reducer **automatically knows the shape:**
+function productReducer(state: State, action: ProductAction) {
+  // TypeScript knows action.type and action.payload
+}
+```
 
 2. **Form validators:**
 
-   ```typescript
-   function validateUserForm(form: FormData) {
-     const errors: string[] = [];
-     if (!form.email) errors.push('Email required');
-     if (!form.password) errors.push('Password required');
+```typescript
+function validateUserForm(form: FormData) {
+  const errors: string[] = [];
+  if (!form.email) errors.push('Email required');
+  if (!form.password) errors.push('Password required');
 
-     return {
-       isValid: errors.length === 0,
-       errors,
-     };
-   }
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
 
-   type ValidationResult = ReturnType<typeof validateUserForm>;
+type ValidationResult = ReturnType<typeof validateUserForm>;
 
-   // Use in component:
-   const [validation, setValidation] = useState<ValidationResult | null>(null);
-   ```
+// Use in component:
+const [validation, setValidation] = useState<ValidationResult | null>(null);
+```
 
 **When to use it:** Literally anytime we need a function's return type elsewhere. **One source of truth.**
 
@@ -534,7 +522,7 @@ type User = Awaited<ReturnType<typeof fetchUser>>;
 
 ---
 
-### 6. [`Parameters<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#parameterstype) - "The Arguments Thief" 🎯
+### 6. [`Parameters<T>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#parameterstype)
 
 **Same problem, different angle:**
 
@@ -558,8 +546,6 @@ type CreateUserParams = {
 };
 // ❌ Function signature changes? Update this manually.
 ```
-
-Nope.
 
 **Better:**
 
@@ -623,49 +609,37 @@ type SubmitEventParams = Parameters<typeof handleSubmit>;
 
 ---
 
-## Bonus Round: Combining These
+## ⚡️ Bonus Round: The "Ghost" vs. The "Mold"
 
-**Pattern 1: Type-safe event emitters**
-
-```typescript
-class EventBus {
-  on(event: 'user-login', handler: (user: User) => void): void;
-  on(event: 'user-logout', handler: () => void): void;
-  on(event: string, handler: Function): void {
-    // implementation
-  }
-}
-
-// Extract handler type:
-type LoginHandler = Parameters<EventBus['on']>[1];
-// Result: (user: User) => void
-```
-
-**Pattern 2: Runtime + compile-time validation**
-
-Zod example from Part 1:
+In [Part 1](https://manuj-sankrit-8055.vercel.app/blog/mastering-typeScript-utility-types-i), I mentioned [Zod](https://zod.dev/). When we combine Zod with `ReturnType`, we get the "Holy Grail" of coding: **Single Source of Truth**.
 
 ```typescript
 import { z } from 'zod';
 
+// 1. THE MOLD (Runtime Reality)
 const UserSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(5), // Let's require 5+ characters
   email: z.string().email(),
-  age: z.number().min(18),
 });
 
-type User = z.infer<typeof UserSchema>; // Zod steals the type
+// 2. THE GHOST (TypeScript Blueprint)
+// Zod "steals" the shape of the mold and gives it to the Ghost.
+type User = z.infer<typeof UserSchema>;
 
 function submitUser(data: User) {
-  const validated = UserSchema.parse(data); // Runtime check
-  return validated;
+  // Layer 1: The Ghost (TS) catches typos while we code.
+  // Layer 2: The Mold (Zod) catches fake data while the app runs.
+  return UserSchema.parse(data);
 }
 
+// 3. THE LOGBOOK (Utility Type)
+// We "steal" the final, validated return type.
 type SubmitUserReturn = ReturnType<typeof submitUser>;
-// Result: User (validated)
 ```
 
-**Both TypeScript AND runtime safety.** Beautiful.
+**Why this is beautiful:** Think of TypeScript as a **Ghost**—it can see our code but it can't touch the real world. Think of Zod as a **Mold**—it's a physical check that sits in the real world.
+
+By using `z.infer` and `ReturnType`, we lock the Ghost and the Mold together. If we change the Mold (the schema), the Ghost (the types) updates automatically. No manual interface updates, no sync errors, just pure automation.
 
 ---
 
@@ -685,35 +659,18 @@ type SubmitUserReturn = ReturnType<typeof submitUser>;
 
 ## That's It
 
-**What we covered:**
-
-- ✅ `Partial<T>` for flexible APIs and tests
-- ✅ `Required<T>` for validation
-- ✅ `Exclude<T, U>` for filtering unions
-- ✅ `Extract<T, U>` for selecting from unions
-- ✅ `ReturnType<T>` for stealing return types
-- ✅ `Parameters<T>` for stealing param types
-
-**Main points:**
-
 1. Stop writing types twice. **Let TypeScript infer.**
 2. `Partial` + defaults = clean, flexible code
 3. `Exclude`/`Extract` = type-safe state machines
 4. `ReturnType`/`Parameters` = **single source of truth**
 
-**Homework:**
-
-1. 🔍 Find one test that needs all params → Use `Partial<T>`
-2. 🎯 Replace one manual interface → Use `ReturnType<typeof fn>`
-3. 🚫 Find one union that needs filtering → Use `Exclude<T, U>`
-
 ---
 
-## Up Next: Part 3 🚀
+## Up Next: Part 3
 
-Built-in utilities are great. But sometimes they're not enough.
+Built-in utilities are great but sometimes they're not enough.
 
-**Part 3 covers custom utilities:**
+**In next and last part of this series we will cover:**
 
 - **`DeepPartial<T>`** - When `Partial` only goes one level
 - **`DeepReadonly<T>`** - Immutability all the way down
@@ -721,12 +678,8 @@ Built-in utilities are great. But sometimes they're not enough.
 - **Template Literal Types** - Type-safe string patterns
 - **Building our own** - Mapped types, conditional types, `infer`
 
-We'll build `DeepPartial` from scratch, break down the `Polymorphic` pattern step-by-step, and explore what powers libraries like Radix UI and Chakra UI.
+We'll build `DeepPartial` from scratch, break down the `Polymorphic` pattern step-by-step, and explore what powers libraries like [Radix UI](https://www.radix-ui.com/) and others.
 
 See you then. Happy typing! Pranipat 🙏! ☮️
-
----
-
-_Questions? Using these in production? Let me know in the comments!_ 🚀
 
 ---
