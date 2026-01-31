@@ -1,0 +1,768 @@
+---
+title: 'Mastering TypeScript Utility Types: Part 3 — Building Custom Utilities'
+description: 'From DeepPartial to Polymorphic—how to build your own utility types and understand the patterns powering modern component libraries.'
+date: 2026-02-02
+tags: ['typescript', 'web development', 'react', 'nextjs']
+---
+
+Final chapter.
+
+In [Part 1](https://manuj-sankrit-8055.vercel.app/blog/mastering-typeScript-utility-types-i), we covered the "Sculptors"—`Record`, `NonNullable`, `Pick`, and `Omit`.
+
+In [Part 2](https://manuj-sankrit-8055.vercel.app/blog/mastering-typeScript-utility-types-ii), we unlocked the "Transformers & Type Thieves"—`Partial`, `Exclude`, `ReturnType`, and `Parameters`.
+
+But here's what I learned the hard way: **TypeScript's built-in utilities only go one level deep.**
+
+Tried using `Partial<T>` on a deeply nested config object? It only makes the _top-level_ properties optional. The nested ones? Still required. Same deal with `Readonly<T>`.
+
+So we're building our own.
+
+Today's journey:
+
+1. **Build `DeepPartial<T>`** from scratch (recursive optional everything)
+2. **Build `DeepReadonly<T>`** from scratch (recursive immutability)
+3. **Understand `infer`** (TypeScript's capture keyword)
+4. **Template Literal Types** (type-safe string patterns)
+5. **The `Polymorphic` pattern** (how component libraries like Radix UI and Chakra UI work)
+
+Let's build. 🛠️
+
+---
+
+## The Problem: Built-ins Don't Go Deep Enough
+
+Here's a scenario I ran into recently:
+
+```typescript
+// Complex config object (pretty common in large apps)
+type AppConfig = {
+  analytics: {
+    enabled: boolean;
+    trackingId: string | null;
+  };
+  api: {
+    baseUrl: string;
+    timeout: number;
+    retries: {
+      enabled: boolean;
+      maxAttempts: number;
+    };
+  };
+};
+
+// For tests, we want to override specific nested values
+// Try using Partial<T>:
+type TestConfig = Partial<AppConfig>;
+
+const testConfig: TestConfig = {
+  api: {
+    baseUrl: 'http://localhost:3000',
+    // ❌ Error: Property 'timeout' is missing!
+    // ❌ Error: Property 'retries' is missing!
+  },
+};
+```
+
+**The problem:** `Partial<AppConfig>` only makes `analytics?` and `api?` optional. Once we start defining `api`, TypeScript still expects us to provide _all_ its properties.
+
+Not helpful.
+
+---
+
+## Building `DeepPartial<T>` - The Journey
+
+Let me walk through how I figured this out.
+
+### Step 1: Starting Point
+
+We know `Partial<T>` works like this:
+
+```typescript
+type Partial<T> = {
+  [P in keyof T]?: T[P];
+};
+```
+
+Translation: "For every property `P` in type `T`, make it optional (`?`), keep its type as `T[P]`."
+
+### Step 2: What If We Just... Recurse?
+
+My first attempt:
+
+```typescript
+type DeepPartial<T> = {
+  [P in keyof T]?: DeepPartial<T[P]>;
+  //                 ^^^^^^^^^^^ Recursively apply to nested objects
+};
+```
+
+Seemed logical. Apply `DeepPartial` to the value too.
+
+**Problem:** This breaks spectacularly for primitives. What does `DeepPartial<string>` even mean? TypeScript freaks out.
+
+### Step 3: The Fix - Conditional Check
+
+Ah. We need to ask: "Is this thing an object? If yes, recurse. If no, leave it alone."
+
+```typescript
+export type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>;
+    }
+  : T;
+```
+
+**Breaking it down:**
+
+1. **`T extends object`** - Check if `T` is an object type
+2. **`? { ... }`** - If YES, create mapped type with optional recursive properties
+3. **`: T`** - If NO (primitive like `string` or `number`), keep as-is
+
+**Now it works:**
+
+```typescript
+type AppConfig = {
+  analytics: {
+    enabled: boolean;
+    trackingId: string | null;
+  };
+  api: {
+    baseUrl: string;
+    timeout: number;
+  };
+};
+
+type TestConfig = DeepPartial<AppConfig>;
+
+const testConfig: TestConfig = {
+  api: {
+    baseUrl: 'http://localhost:3000',
+    // ✅ timeout is now optional!
+  },
+  // ✅ analytics is optional too!
+};
+```
+
+### Real-World Usage
+
+Here's where this actually saved me:
+
+**1. Test fixtures:**
+
+```typescript
+// Full app translations structure
+type Translations = {
+  common: {
+    buttons: {
+      submit: string;
+      cancel: string;
+    };
+    errors: {
+      required: string;
+      invalid: string;
+    };
+  };
+  pages: {
+    home: {
+      title: string;
+      subtitle: string;
+    };
+  };
+};
+
+// Locale-specific overrides - only define what's different
+const frenchTranslations: DeepPartial<Translations> = {
+  common: {
+    buttons: {
+      submit: 'Soumettre',
+      // ✅ Don't need to define 'cancel'
+    },
+  },
+  // ✅ Don't need to define 'pages' at all
+};
+```
+
+**2. Feature flag overrides:**
+
+```typescript
+type FeatureFlags = {
+  checkout: {
+    expressPayment: boolean;
+    guestCheckout: boolean;
+  };
+  search: {
+    autocomplete: boolean;
+    filters: {
+      price: boolean;
+      brand: boolean;
+    };
+  };
+};
+
+// Override just what we need for this environment
+const stagingFlags: DeepPartial<FeatureFlags> = {
+  checkout: {
+    expressPayment: true,
+    // ✅ guestCheckout keeps default
+  },
+};
+```
+
+**Why this is powerful:** We can override _any nested property_ without rebuilding the entire structure. Perfect for:
+
+- Test fixtures
+- Locale translations
+- Environment-specific configs
+- Theme customization
+
+---
+
+## Building `DeepReadonly<T>` - Going Immutable
+
+Next challenge: **deep immutability**.
+
+### The Problem I Ran Into
+
+```typescript
+const config = {
+  api: {
+    endpoints: {
+      users: '/api/users',
+      products: '/api/products',
+    },
+  },
+} as const;
+
+// Surprise! 'as const' only goes one level deep
+config.api.endpoints.users = '/hacked'; // ❌ This actually works! Bug waiting to happen
+```
+
+Not what I expected.
+
+### Step 1: The Obvious Attempt
+
+Start with `Readonly<T>`:
+
+```typescript
+type Readonly<T> = {
+  readonly [P in keyof T]: T[P];
+};
+```
+
+Translation: "For every property `P` in `T`, make it `readonly`."
+
+### Step 2: Add Recursion + A Critical Catch
+
+Here's the thing I learned: **Functions are objects in JavaScript**. If we blindly recurse into functions, we break them. Can't have a `readonly` function.
+
+```typescript
+export type DeepReadonly<T> = T extends Function
+  ? T // Stop! Leave functions alone
+  : T extends object
+    ? {
+        readonly [P in keyof T]: DeepReadonly<T[P]>;
+      }
+    : T;
+```
+
+**The logic:**
+
+1. **`T extends Function`** - Is this a function? If YES → Don't touch it
+2. **`T extends object`** - Is this an object? If YES → Apply `readonly` recursively
+3. **`: T`** - Otherwise (primitive) → Keep as-is
+
+**Now it actually works:**
+
+```typescript
+type AppConfig = {
+  api: {
+    endpoints: {
+      users: string;
+      products: string;
+    };
+  };
+  logger: (message: string) => void;
+};
+
+type ReadonlyConfig = DeepReadonly<AppConfig>;
+
+const config: ReadonlyConfig = {
+  api: {
+    endpoints: {
+      users: '/api/users',
+      products: '/api/products',
+    },
+  },
+  logger: (msg) => console.log(msg),
+};
+
+config.api.endpoints.users = '/hacked'; // ❌ Error: Cannot assign to 'users' - it's read-only
+config.logger('test'); // ✅ Functions still work!
+```
+
+### Where I Actually Use This
+
+**1. Configuration constants:**
+
+```typescript
+type AppSettings = {
+  features: {
+    darkMode: boolean;
+    notifications: boolean;
+  };
+  limits: {
+    maxFileSize: number;
+    maxUploads: number;
+  };
+};
+
+// Make entire config immutable
+export const settings: DeepReadonly<AppSettings> = {
+  features: {
+    darkMode: true,
+    notifications: false,
+  },
+  limits: {
+    maxFileSize: 5242880, // 5MB
+    maxUploads: 10,
+  },
+};
+
+// Anywhere in the app
+settings.limits.maxFileSize = 999; // ❌ Error - protected from accidental changes
+```
+
+**2. Redux/state management:**
+
+```typescript
+type AppState = {
+  user: {
+    profile: {
+      name: string;
+      email: string;
+    };
+    preferences: {
+      theme: 'light' | 'dark';
+    };
+  };
+};
+
+// State should never be mutated directly
+const initialState: DeepReadonly<AppState> = {
+  // ... state definition
+};
+```
+
+**Why this matters:**
+
+- Prevent accidental mutations in state trees
+- Protect configuration from runtime changes
+- Make immutability explicit in the type system
+- Catch bugs at compile time instead of runtime
+
+---
+
+## The `infer` Keyword - TypeScript's Capture Tool
+
+This one took me a while to understand.
+
+### What Is `infer`?
+
+Think of it as a "capture variable" inside conditional types.
+
+```typescript
+type SetValues<S> = S extends Set<infer V> ? V : never;
+//                           ┌─────┘
+//                           └─ "If S is a Set, capture its value type as V"
+```
+
+**Step-by-step:**
+
+1. **`S extends Set<infer V>`** - "Is `S` a Set? If yes, _capture_ its value type and call it `V`"
+2. **`? V`** - "If check passes, return the captured type `V`"
+3. **`: never`** - "Otherwise, return `never`"
+
+### Real Example
+
+```typescript
+const validPages = new Set([
+  'home',
+  'about',
+  'products',
+  'blog',
+  'contact',
+] as const);
+
+type SetValues<S> = S extends Set<infer V> ? V : never;
+
+type PageName = SetValues<typeof validPages>;
+// Result: 'home' | 'about' | 'products' | 'blog' | 'contact'
+```
+
+**Why this pattern is brilliant:**
+
+- ✅ **Single source of truth** - Set exists at runtime AND provides types
+- ✅ **Auto-sync** - Add/remove from Set → types update automatically
+- ✅ **Runtime validation** - Use `validPages.has(page)` to check
+
+### Other Patterns I've Used
+
+**1. Extract Array Element Type:**
+
+```typescript
+type ArrayElement<T> = T extends (infer E)[] ? E : never;
+
+type Numbers = ArrayElement<number[]>; // number
+type Strings = ArrayElement<string[]>; // string
+```
+
+**2. Unwrap Promises:**
+
+```typescript
+type Awaited<T> = T extends Promise<infer U> ? U : T;
+
+type Result = Awaited<Promise<string>>; // string
+type Result2 = Awaited<number>; // number (not a Promise)
+```
+
+**3. Function Parameters:**
+
+```typescript
+type Parameters<T> = T extends (...args: infer P) => any ? P : never;
+
+function createUser(name: string, age: number) {}
+
+type Params = Parameters<typeof createUser>; // [string, number]
+```
+
+---
+
+## Template Literal Types - Type-Safe Strings
+
+Game changer for string patterns.
+
+### The Pattern
+
+```typescript
+// Type-safe filter parameters
+type FilterParam = `filter_${string}_single` | `filter_${string}_multi`;
+
+// Valid:
+const param1: FilterParam = 'filter_color_single'; // ✅
+const param2: FilterParam = 'filter_price_multi'; // ✅
+
+// Invalid:
+const param3: FilterParam = 'filter_color_xyz'; // ❌ Error
+const param4: FilterParam = 'color_single'; // ❌ Error (missing prefix)
+```
+
+### How It Works
+
+Template literal types let us construct types using string patterns:
+
+```typescript
+type Prefix = 'filter_';
+type Suffix = '_single' | '_multi';
+type FilterParam = `${Prefix}${string}${Suffix}`;
+```
+
+**The magic:** TypeScript enforces the pattern at compile time.
+
+### Real-World Use Cases
+
+**1. Event handlers:**
+
+```typescript
+type EventName = `on${Capitalize<string>}`;
+
+const handler1: EventName = 'onClick'; // ✅
+const handler2: EventName = 'onSubmit'; // ✅
+const handler3: EventName = 'click'; // ❌ Error (missing 'on')
+```
+
+**2. CSS variables:**
+
+```typescript
+type CSSVariable = `--${string}`;
+
+const color: CSSVariable = '--primary-color'; // ✅
+const invalid: CSSVariable = 'primary-color'; // ❌ Error
+```
+
+**3. API routes:**
+
+```typescript
+type APIRoute = `/api/${string}`;
+
+const userRoute: APIRoute = '/api/users'; // ✅
+const invalid: APIRoute = '/users'; // ❌ Error
+```
+
+**4. Extract admin routes:**
+
+```typescript
+type PageType =
+  | 'home'
+  | 'about'
+  | 'admin-dashboard'
+  | 'admin-settings'
+  | 'admin-users';
+
+// Only admin pages
+type AdminPage = Extract<PageType, `admin-${string}`>;
+// Result: 'admin-dashboard' | 'admin-settings' | 'admin-users'
+```
+
+---
+
+## The `Polymorphic` Pattern - How Component Libraries Work
+
+This is what makes component libraries so flexible.
+
+### The Problem
+
+```typescript
+// We build a Button component
+function Button({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return <button onClick={onClick}>{children}</button>;
+}
+
+// PM: "Can this be a link sometimes?"
+// Us: "Uh... let me rewrite this..."
+
+function Button({
+  onClick,
+  href,
+  children,
+}: {
+  onClick?: () => void;
+  href?: string;
+  children: React.ReactNode;
+}) {
+  if (href) {
+    return <a href={href}>{children}</a>;
+  }
+  return <button onClick={onClick}>{children}</button>;
+}
+
+// Problem: TypeScript doesn't know which props are valid!
+<Button href="/products" onClick={() => {}} />; // Both? Neither? Confusing.
+```
+
+### The Solution: `as` Prop Pattern
+
+```tsx
+<Button as="a" href="/products">
+  Link
+</Button>
+
+<Button as="button" onClick={handleClick}>
+  Button
+</Button>
+
+<Button as="div" role="button" tabIndex={0}>
+  Div
+</Button>
+```
+
+**The magic:** TypeScript **knows** which props are valid based on the `as` value.
+
+### How `Polymorphic` Works (Simplified)
+
+```typescript
+import { ElementType, ComponentPropsWithRef, ReactElement } from 'react';
+
+type Polymorphic<DefaultElement extends ElementType, Props = {}> = <
+  Element extends ElementType = DefaultElement,
+>(
+  props: {
+    as?: Element;
+  } & Props &
+    ComponentPropsWithRef<Element>,
+) => ReactElement | null;
+```
+
+**Breaking it down:**
+
+1. **`DefaultElement extends ElementType`**  
+   Default HTML element (`'button'`, `'a'`, `'div'`)
+
+2. **`<Element extends ElementType = DefaultElement>`**  
+   Generic allowing override via `as` prop
+
+3. **`{ as?: Element }`**  
+   Optional `as` prop to change element
+
+4. **`Props`**  
+   Our custom props (`variant`, `size`, etc.)
+
+5. **`ComponentPropsWithRef<Element>`**  
+   **THE MAGIC** - Auto-includes all valid HTML props for that element
+
+### What `ComponentPropsWithRef` Does
+
+```typescript
+// When Element = 'a'
+ComponentPropsWithRef<'a'>;
+// = { href?: string; target?: string; rel?: string; ... }
+
+// When Element = 'button'
+ComponentPropsWithRef<'button'>;
+// = { type?: 'button' | 'submit'; disabled?: boolean; ... }
+
+// When Element = 'div'
+ComponentPropsWithRef<'div'>;
+// = { className?: string; style?: CSSProperties; ... }
+```
+
+### Real Implementation
+
+```tsx
+// Step 1: Define custom props
+interface ButtonProps {
+  variant?: 'primary' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
+}
+
+// Step 2: Create component
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ as: Component = 'button', variant = 'primary', size = 'md', ...props }, ref) => {
+    return <Component ref={ref} className={`btn-${variant} btn-${size}`} {...props} />;
+  }
+) as Polymorphic<'button', ButtonProps>;
+
+// Step 3: Use with full type safety
+<Button variant="primary" onClick={() => {}}>
+  Default Button
+</Button>
+
+<Button as="a" variant="primary" href="/products">
+  Link styled as Button
+</Button>
+
+<Button as="a" variant="primary" disabled>
+  {/* ❌ Error: 'disabled' doesn't exist on 'a' */}
+</Button>
+```
+
+### When to Use It
+
+**✅ Perfect for:**
+
+- Design system components
+- Layout primitives (Box, Stack)
+- Dynamic heading levels (`as="h1"` vs `as="h2"`)
+- Semantically changing components
+
+**❌ Skip when:**
+
+- Simple single-purpose components
+- No need for flexibility
+- Team isn't comfortable with advanced types
+
+---
+
+## Putting It All Together
+
+Here's how these patterns compose:
+
+```typescript
+// 1. Deep config with immutability
+type Config = DeepReadonly<{
+  api: {
+    baseUrl: string;
+    timeout: number;
+  };
+}>;
+
+// 2. Test overrides
+const testConfig: DeepPartial<Config> = {
+  api: {
+    timeout: 1000,
+    // ✅ baseUrl is optional
+  },
+};
+
+// 3. Type-safe routes
+type APIRoute = `/api/${string}`;
+type AdminRoute = Extract<APIRoute, `/api/admin-${string}`>;
+
+// 4. Set-based types
+const validRoutes = new Set(['/api/users', '/api/products'] as const);
+type SetValues<S> = S extends Set<infer V> ? V : never;
+type ValidRoute = SetValues<typeof validRoutes>;
+
+// 5. Polymorphic component
+const Link = forwardRef(({ ...props }, ref) => <a ref={ref} {...props} />);
+export const StyledLink = Link as Polymorphic<'a', { variant: 'primary' | 'secondary' }>;
+```
+
+---
+
+## Quick Reference
+
+| Pattern               | Syntax                                         | Use Case                  |
+| --------------------- | ---------------------------------------------- | ------------------------- |
+| **DeepPartial**       | `T extends object ? { [P]?: DeepPartial } : T` | Nested config overrides   |
+| **DeepReadonly**      | `T extends Function ? T : readonly`            | Immutable state trees     |
+| **infer (Set)**       | `S extends Set<infer V> ? V : never`           | Extract Set value types   |
+| **infer (Promise)**   | `T extends Promise<infer U> ? U : T`           | Unwrap Promise types      |
+| **Template Literals** | `` `${Prefix}${string}${Suffix}` ``            | Type-safe string patterns |
+| **Polymorphic**       | `<E extends ElementType>(props) => Element`    | Flexible React components |
+
+---
+
+## Wrapping Up
+
+**What we built:**
+
+- ✅ `DeepPartial<T>` - Recursive optional properties
+- ✅ `DeepReadonly<T>` - Recursive immutability
+- ✅ **`infer` pattern** - Capturing types from generics
+- ✅ **Template literal types** - Type-safe string patterns
+- ✅ **`Polymorphic` pattern** - How component libraries work
+
+**Key takeaways:**
+
+1. Built-in utilities are shallow - we need custom ones for deep problems
+2. `infer` lets us capture and extract types dynamically
+3. Template literals enable compile-time string validation
+4. `Polymorphic` is how libraries stay flexible AND type-safe
+5. These patterns compose - mix and match to solve complex problems
+
+---
+
+## The Journey
+
+We started with basic sculptors (`Record`, `Pick`, `Omit`).
+
+Evolved to transformers and thieves (`Partial`, `ReturnType`, `Parameters`).
+
+Ended by building our own utilities and understanding what powers modern TypeScript libraries.
+
+**We now have tools to:**
+
+- Write type-safe, maintainable code
+- Build custom utility types when needed
+- Read advanced TypeScript codebases
+- Contribute to component libraries confidently
+
+---
+
+## Final Thought
+
+TypeScript's type system isn't just about catching bugs. It's about **encoding our intent** so clearly that code documents itself.
+
+When we use `DeepReadonly` on a config, we're saying: "This should never change at runtime."
+
+When we use `Polymorphic` on a Button, we're saying: "This can be many things, but always safely."
+
+That's the real power.
+
+Until next time, happy typing! Pranipat 🙏! ☮️
+
+---
+
+_Questions about advanced TypeScript patterns? Want to discuss these utilities? Drop a comment! And if you built something cool with these, I'd love to see it._ 🚀
+
+---
