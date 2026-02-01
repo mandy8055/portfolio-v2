@@ -1,7 +1,7 @@
 ---
 title: 'Mastering TypeScript Utility Types: Part 3 — Building Custom Utilities'
 description: 'From DeepPartial to Polymorphic—how to build your own utility types and understand the patterns powering modern component libraries.'
-date: 2026-02-02
+date: 2026-02-01
 tags: ['typescript', 'web development', 'react', 'nextjs']
 ---
 
@@ -23,9 +23,7 @@ Today's journey:
 2. **Build `DeepReadonly<T>`** from scratch (recursive immutability)
 3. **Understand `infer`** (TypeScript's capture keyword)
 4. **Template Literal Types** (type-safe string patterns)
-5. **The `Polymorphic` pattern** (how component libraries like Radix UI and Chakra UI work)
-
-Let's build. 🛠️
+5. **The `Polymorphic` pattern** (how component libraries like Radix UI work)
 
 ---
 
@@ -63,9 +61,7 @@ const testConfig: TestConfig = {
 };
 ```
 
-**The problem:** `Partial<AppConfig>` only makes `analytics?` and `api?` optional. Once we start defining `api`, TypeScript still expects us to provide _all_ its properties.
-
-Not helpful.
+**The problem:** `Partial<AppConfig>` only makes `analytics?` and `api?` optional. Once we start defining `api`, TypeScript still expects us to provide _all_ its properties which is not helpful.
 
 ---
 
@@ -362,84 +358,69 @@ const initialState: DeepReadonly<AppState> = {
 
 ---
 
-## The `infer` Keyword - TypeScript's Capture Tool
+## The `infer` Keyword — TypeScript's "Capture" Tool
 
-This one took me a while to understand.
+This was the part that took me the longest to wrap my head around. I used to think of types as static labels I had to manually apply, but `infer` changed that. I started seeing it as a **Type Detective**.
 
-### What Is `infer`?
+Instead of telling TypeScript what a type is, I'm asking it to go find a type that's hidden inside a structure I've already built.
 
-Think of it as a "capture variable" inside conditional types.
+### The Analogy That Fixed It For Me
 
-```typescript
-type SetValues<S> = S extends Set<infer V> ? V : never;
-//                           ┌─────┘
-//                           └─ "If S is a Set, capture its value type as V"
-```
+I found it helpful to think of a sealed box labeled "Container of [Something]".
 
-**Step-by-step:**
+- With standard generics, I'm the one putting the label on: `Container<Apple>`.
+- With `infer`, I'm looking at a box that's already there and saying: "If this is a container, capture whatever is inside it and let me use that value as a new type."
 
-1. **`S extends Set<infer V>`** - "Is `S` a Set? If yes, _capture_ its value type and call it `V`"
-2. **`? V`** - "If check passes, return the captured type `V`"
-3. **`: never`** - "Otherwise, return `never`"
+### Peeking Under the Hood: `ReturnType`
 
-### Real Example
+I realized I had actually been using `infer` all along without knowing it. The built-in `ReturnType<T>` utility which we discussed in [part 2](https://manuj-sankrit-8055.vercel.app/blog/mastering-typeScript-utility-types-ii) isn't a special hard-coded feature; it's just a clever bit of logic in the TypeScript source code that looks like this:
 
 ```typescript
-const validPages = new Set([
-  'home',
-  'about',
-  'products',
-  'blog',
-  'contact',
-] as const);
-
-type SetValues<S> = S extends Set<infer V> ? V : never;
-
-type PageName = SetValues<typeof validPages>;
-// Result: 'home' | 'about' | 'products' | 'blog' | 'contact'
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : any;
 ```
 
-**Why this pattern is brilliant:**
+I started breaking down the logic like this:
 
-- ✅ **Single source of truth** - Set exists at runtime AND provides types
-- ✅ **Auto-sync** - Add/remove from Set → types update automatically
-- ✅ **Runtime validation** - Use `validPages.has(page)` to check
+1. **The Match**: First, it checks "Is `T` a function?"
+2. **The Capture**: If it is, `infer R` tells TypeScript: "Don't just return true. Reach into the function, grab the specific type it returns, and store it in a temporary variable `R`."
+3. **The Result**: Then it simply returns that captured `R`.
 
-### Other Patterns I've Used
+### The Real-World "Why": The Single Source of Truth
 
-**1. Extract Array Element Type:**
+The moment this actually became useful for me was when I tried to keep my runtime data and my types in sync. I hated typing the same list twice.
+
+For example, if I have a `Set` of allowed User Roles, I want my `Role` type to update automatically whenever I change that Set.
 
 ```typescript
-type ArrayElement<T> = T extends (infer E)[] ? E : never;
+// 1. My source of truth (at runtime)
+const VALID_ROLES = new Set(['admin', 'editor', 'viewer'] as const);
 
-type Numbers = ArrayElement<number[]>; // number
-type Strings = ArrayElement<string[]>; // string
+// 2. My "stolen" type logic
+type GetSetValues<T> = T extends Set<infer V> ? V : never;
+
+// 3. Automated Syncing
+type Role = GetSetValues<typeof VALID_ROLES>;
+// Result: "admin" | "editor" | "viewer"
 ```
 
-**2. Unwrap Promises:**
+**The breakthrough for me**: Now, if I add `'super-admin'` to the `VALID_ROLES` set, my `Role` type updates instantly. No manual syncing, no room for "type drift."
 
-```typescript
-type Awaited<T> = T extends Promise<infer U> ? U : T;
+### When I Find Myself Reaching For It
 
-type Result = Awaited<Promise<string>>; // string
-type Result2 = Awaited<number>; // number (not a Promise)
-```
+I've started using `infer` whenever I need to "break into" a type that I didn't define myself:
 
-**3. Function Parameters:**
+- **Unwrapping Promises**: Getting the raw data type out of an API call result.
+- **Peeking at Array Items**: Finding out what's inside a list without manually re-typing the interface.
+- **Template Literals**: Pulling a specific ID or string pattern out of a string like `"user_123"`.
 
-```typescript
-type Parameters<T> = T extends (...args: infer P) => any ? P : never;
+### My Mental Shortcut
 
-function createUser(name: string, age: number) {}
-
-type Params = Parameters<typeof createUser>; // [string, number]
-```
+- `extends` is the condition (the "if").
+- `infer` is the grab (the "capture").
 
 ---
 
 ## Template Literal Types - Type-Safe Strings
-
-Game changer for string patterns.
 
 ### The Pattern
 
@@ -515,150 +496,74 @@ type AdminPage = Extract<PageType, `admin-${string}`>;
 
 ---
 
-## The `Polymorphic` Pattern - How Component Libraries Work
+## The Polymorphic Pattern — Building a "Shape-Shifter"
 
-This is what makes component libraries so flexible.
+When this pattern clicked, I realized it's the secret sauce behind every professional UI library like Radix. The same insights I want to share too.
 
 ### The Problem
 
-```typescript
-// We build a Button component
-function Button({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return <button onClick={onClick}>{children}</button>;
-}
+I built a standard `Button` component, and everything was fine. Then a designer asked: "Can this button be a link sometimes?" I tried the obvious approach—adding an `href` prop and an `if` statement—but I quickly ran into a mess. My `Button` was getting link props, and my `Link` was getting button props. TypeScript was confused, and I was manually writing dozens of optional props.
 
-// PM: "Can this be a link sometimes?"
-// Us: "Uh... let me rewrite this..."
-
-function Button({
-  onClick,
-  href,
-  children,
-}: {
-  onClick?: () => void;
-  href?: string;
-  children: React.ReactNode;
-}) {
-  if (href) {
-    return <a href={href}>{children}</a>;
-  }
-  return <button onClick={onClick}>{children}</button>;
-}
-
-// Problem: TypeScript doesn't know which props are valid!
-<Button href="/products" onClick={() => {}} />; // Both? Neither? Confusing.
-```
-
-### The Solution: `as` Prop Pattern
-
-```tsx
-<Button as="a" href="/products">
-  Link
-</Button>
-
-<Button as="button" onClick={handleClick}>
-  Button
-</Button>
-
-<Button as="div" role="button" tabIndex={0}>
-  Div
-</Button>
-```
-
-**The magic:** TypeScript **knows** which props are valid based on the `as` value.
-
-### How `Polymorphic` Works (Simplified)
+I wanted a component that could do this:
 
 ```typescript
-import { ElementType, ComponentPropsWithRef, ReactElement } from 'react';
+// This should only allow button props (like type="submit")
+<Button as="button" type="submit">Save</Button>
 
-type Polymorphic<DefaultElement extends ElementType, Props = {}> = <
-  Element extends ElementType = DefaultElement,
+// This should only allow link props (like href="/home")
+<Button as="a" href="/home">Home</Button>
+```
+
+### How I Simplified the Logic
+
+I realized a polymorphic component is basically a shape-shifter. It needs to look at the `as` prop and then "steal" the correct HTML attributes for that specific tag.
+
+I broke it down into this mental model:
+
+1. **The Generic Element (`E`)**: I tell TypeScript that my component can be any HTML tag.
+2. **The `as` Prop**: I pass in the tag name (like `'a'` or `'button'`).
+3. **The Prop Thief**: I use a built-in React type to "grab" all the valid props for whatever `E` happens to be.
+
+### Peeking at the Magic: `ComponentPropsWithRef`
+
+The real breakthrough for me was discovering `ComponentPropsWithRef<E>`. It's like an automated dictionary:
+
+- If `E` is `'a'`, it gives me `href`.
+- If `E` is `'button'`, it gives me `type` and `disabled`.
+- If `E` is `'div'`, it removes both and gives me `aria` roles.
+
+### My "Clean" Implementation
+
+Instead of fighting the types, I found that casting the component as a `Polymorphic` type at the very end was the cleanest way to keep the code readable.
+
+```typescript
+// I think of this as the "Contract"
+type Polymorphic<DefaultElement extends ElementType, CustomProps = {}> =
+  E extends ElementType = DefaultElement
 >(
-  props: {
-    as?: Element;
-  } & Props &
-    ComponentPropsWithRef<Element>,
+  // Combine the 'as' prop + my custom props + the "stolen" HTML props
+  props: { as?: E } & CustomProps & ComponentPropsWithRef<E>
 ) => ReactElement | null;
 ```
 
-**Breaking it down:**
+### The Result
 
-1. **`DefaultElement extends ElementType`**  
-   Default HTML element (`'button'`, `'a'`, `'div'`)
-
-2. **`<Element extends ElementType = DefaultElement>`**  
-   Generic allowing override via `as` prop
-
-3. **`{ as?: Element }`**  
-   Optional `as` prop to change element
-
-4. **`Props`**  
-   Our custom props (`variant`, `size`, etc.)
-
-5. **`ComponentPropsWithRef<Element>`**  
-   **THE MAGIC** - Auto-includes all valid HTML props for that element
-
-### What `ComponentPropsWithRef` Does
+When I finally put it all together, the developer experience was incredible. If I try to pass a `disabled` prop to a `Button` that is acting `as="a"`, TypeScript catches it immediately:
 
 ```typescript
-// When Element = 'a'
-ComponentPropsWithRef<'a'>;
-// = { href?: string; target?: string; rel?: string; ... }
-
-// When Element = 'button'
-ComponentPropsWithRef<'button'>;
-// = { type?: 'button' | 'submit'; disabled?: boolean; ... }
-
-// When Element = 'div'
-ComponentPropsWithRef<'div'>;
-// = { className?: string; style?: CSSProperties; ... }
-```
-
-### Real Implementation
-
-```tsx
-// Step 1: Define custom props
-interface ButtonProps {
-  variant?: 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
-}
-
-// Step 2: Create component
-const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ as: Component = 'button', variant = 'primary', size = 'md', ...props }, ref) => {
-    return <Component ref={ref} className={`btn-${variant} btn-${size}`} {...props} />;
-  }
-) as Polymorphic<'button', ButtonProps>;
-
-// Step 3: Use with full type safety
-<Button variant="primary" onClick={() => {}}>
-  Default Button
-</Button>
-
-<Button as="a" variant="primary" href="/products">
-  Link styled as Button
-</Button>
-
-<Button as="a" variant="primary" disabled>
-  {/* ❌ Error: 'disabled' doesn't exist on 'a' */}
+<Button as="a" href="/dashboard" disabled>
+  {/* ❌ Error: 'disabled' doesn't exist on 'a' tags! */}
 </Button>
 ```
 
-### When to Use It
+### When I Use This (And When I Don't)
 
-**✅ Perfect for:**
+I've learned that this is a "power tool."
 
-- Design system components
-- Layout primitives (Box, Stack)
-- Dynamic heading levels (`as="h1"` vs `as="h2"`)
-- Semantically changing components
+- **I use it for**: Layout primitives (like a `Box` or `Stack`) and design system components (like `Button` or `Heading`).
+- **I skip it for**: Simple, one-off components. If a component is always going to be a `form`, there's no need to make it polymorphic.
 
-**❌ Skip when:**
-
-- Simple single-purpose components
-- No need for flexibility
-- Team isn't comfortable with advanced types
+My rule of thumb: If I find myself writing `if (isLink) return <a ... />`, it's time to reach for the Polymorphic pattern.
 
 ---
 
@@ -760,9 +665,5 @@ When we use `Polymorphic` on a Button, we're saying: "This can be many things, b
 That's the real power.
 
 Until next time, happy typing! Pranipat 🙏! ☮️
-
----
-
-_Questions about advanced TypeScript patterns? Want to discuss these utilities? Drop a comment! And if you built something cool with these, I'd love to see it._ 🚀
 
 ---
