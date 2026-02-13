@@ -1,0 +1,212 @@
+---
+title: 'Handy Bit Manipulation Tricks'
+description: 'Common bit manipulation tricks that are worth keeping in your toolbox.'
+date: 2026-02-13
+tags: ['algorithms', 'javascript', 'typescript', 'programming']
+---
+
+I was digging through React's source code and stumbled upon some bitmask logic for handling component states. At first glance, it looked cryptic—just a bunch of `&`, `|`, and `<<` operators. But once I understood what was happening, it clicked. These operations are ridiculously fast and efficient.
+
+Here are some tricks I find myself reaching for when performance actually matters.
+
+## Basic Bit Operations
+
+### Setting a Bit
+
+To set the bit at position `pos`, use the bitwise OR operator. Think of `(1 << pos)` as a laser pointer—you're pointing it exactly at one spot, and `|` is the "turn on" switch:
+
+```typescript
+function setBit(n: number, pos: number): number {
+  return n | (1 << pos);
+}
+```
+
+Example: Setting bit at position 2 in `0b1010` gives us `0b1110`
+
+```shell
+   0b1010
+ | 0b0100  (laser pointer at position 2)
+-----------
+   0b1110
+```
+
+### Clearing a Bit
+
+To clear a bit at position `pos`, we AND with the inverted mask:
+
+```ts
+function clearBit(n: number, pos: number): number {
+  return n & ~(1 << pos);
+}
+```
+
+Example: Clearing bit at position 1 in `0b1110` gives `0b1100`
+
+```shell
+   0b1110
+ & 0b1101
+-----------
+   0b1100
+```
+
+### Toggling a Bit
+
+Toggling is straightforward with _[XOR](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Bitwise_XOR)_:
+
+```ts
+function toggleBit(n: number, pos: number): number {
+  return n ^ (1 << pos);
+}
+```
+
+Example: Toggling bit at position 2 in `0b1010` → `0b1110`
+
+```shell
+   0b1010
+ ^ 0b0100
+-----------
+   0b1110
+```
+
+### Checking a Bit
+
+To check if a bit is set:
+
+```ts
+function checkBit(n: number, pos: number): boolean {
+  return ((n >> pos) & 1) !== 0;
+}
+```
+
+Example: Checking bit at position 1 in `0b0110`
+
+```shell
+   0b0110
+ >>     1
+-----------
+   0b0011
+ & 0b0001
+-----------
+   0b0001 (true)
+```
+
+> **⚠️ JS/TS Gotcha**: Bitwise operators in JavaScript convert numbers into 32-bit signed integers. If you're working with large numbers (above 2³¹-1), like database IDs or timestamps, this magic will turn into a nightmare. For those cases, stick with _[BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)_ or regular arithmetic.
+
+## Some Clever Tricks
+
+### Check if a Number is a Power of 2
+
+This one's pretty neat:
+
+```ts
+function isPowerOfTwo(n: number): boolean {
+  return n > 0 && (n & (n - 1)) === 0;
+}
+```
+
+The trick here is that powers of 2 have exactly one bit set(means one bit is `1`). When you subtract 1, all the bits after that flip, so the AND operation gives you 0.
+
+```shell
+n = 8 (0b1000)
+n - 1 = 7 (0b0111)
+n & (n - 1) = 0b0000
+```
+
+### Count Set Bits (_[Brian Kernighan's Algorithm](https://www.educative.io/answers/what-is-kernighans-algorithm)_)
+
+```ts
+function countSetBits(n: number): number {
+  let count = 0;
+  while (n) {
+    n = n & (n - 1);
+    count++;
+  }
+  return count;
+}
+```
+
+This keeps clearing the rightmost set bit until nothing's left. Each iteration bumps the count.
+
+```shell
+0b1011 → 0b1010 → 0b1000 → 0b0000
+count: 1      2        3
+```
+
+### Find the Rightmost Set Bit
+
+```ts
+function rightmostSetBit(n: number): number {
+  return n & -n;
+}
+```
+
+This works because `-n` (_[two's complement](https://en.wikipedia.org/wiki/Two%27s_complement)_) flips all the bits and adds 1, which isolates just the rightmost set bit.
+
+```shell
+n = 0b1010
+-n = 0b0110
+n & -n = 0b0010
+```
+
+### Swap Two Numbers Without a Temp Variable
+
+```ts
+function swap(a: number, b: number): [number, number] {
+  a = a ^ b;
+  b = a ^ b;
+  a = a ^ b;
+  return [a, b];
+}
+```
+
+XOR has this cool property where `a ^ a = 0` and `a ^ 0 = a`, so you can swap without needing extra space.
+
+### Check if a Number is Even
+
+```ts
+function isEven(n: number): boolean {
+  return (n & 1) === 0;
+}
+```
+
+Way faster than the modulo operator. The least significant bit is 0 for even numbers.
+
+## The Trade-off: Efficiency vs Readability
+
+Now, here's the thing. Every concept has its pros and cons, and bit manipulation is no exception. Sure, these operations are super efficient and lean, but they definitely compromise the _[KISS principle.](https://en.wikipedia.org/wiki/KISS_principle)_
+
+If you go overboard with bit tricks in your codebase, you're gonna have a problem. Junior developers—well, the ones that haven't been replaced by AI yet 😁—might struggle to understand what's going on. Heck, even you might come back to your own code six months later and wonder what you were thinking.
+
+So use bit manipulation wisely:
+
+- **Performance-critical sections**: Where every cycle counts
+- **Well-documented code**: Add comments explaining the bit magic
+- **Specific algorithms**: Like the ones mentioned above
+- **Standard patterns**: Stick to common tricks that developers recognize
+
+But for everyday logic? Just write clear, readable code. `n % 2 === 0` is perfectly fine for checking even numbers in most cases. Don't sacrifice code clarity just to show off your bit manipulation skills.
+
+## Where This Actually Matters
+
+You'll see bit manipulation used in:
+
+- **Permissions systems**: Like Unix file permissions (`chmod 755`)
+- **Feature flags**: When you need to pack multiple boolean flags into a single integer
+- **Subset generation**: Iterating through all possible combinations
+- **Performance-critical code**: These operations literally execute in one CPU cycle
+
+## Quick Reference
+
+| Operation     | Code                | Example                         |
+| ------------- | ------------------- | ------------------------------- |
+| Set bit       | `n \| (1 << pos)`   | `0b1010 \| (1 << 2)` → `0b1110` |
+| Clear bit     | `n & ~(1 << pos)`   | `0b1110 & ~(1 << 1)` → `0b1100` |
+| Toggle bit    | `n ^ (1 << pos)`    | `0b1010 ^ (1 << 2)` → `0b1110`  |
+| Check bit     | `(n >> pos) & 1`    | `(0b1010 >> 1) & 1` → `1` (set) |
+| Power of 2    | `n & (n - 1) === 0` | `8 & 7 === 0` → `true`          |
+| Even/Odd      | `n & 1 === 0`       | `4 & 1 === 0` → `true` (even)   |
+| Rightmost set | `n & -n`            | `0b1010 & -0b1010` → `0b0010`   |
+
+These patterns might look weird at first, but after using them a few times, they start to make sense. Just remember: with great power comes great responsibility. Use them where they make sense, not everywhere.
+
+Pranipat 🙏!
