@@ -40,7 +40,7 @@
     "tsparticles": "^3.9.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.7",
+    "@biomejs/biome": "2.4.9",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25.5.0",
     "@types/react": "^19",
