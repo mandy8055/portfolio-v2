@@ -1,0 +1,411 @@
+---
+title: 'Page Numbers Lie: Offset vs Cursor Pagination'
+description: 'Why the humble "next page" button is hiding a dark secret — and how cursor-based pagination fixes it for good.'
+date: 2026-03-31
+tags: ['graphql', 'javascript', 'typescript', 'backend', 'api-design']
+---
+
+## The PR Comment That Sent Me Spiralling
+
+It was a normal Tuesday. I had just raised a PR for our infinite scroll implementation — proud of it, honestly. Clean code, working demo, ready to ship.
+
+Then the comment appeared:
+
+> "Have you considered cursor-based pagination instead of offset here?"
+
+I typed back a confident _"offset works fine for our use case"_ — and then immediately opened a new tab to make absolutely sure that was true. 😅
+
+Turns out, it _was_ fine for our use case. But understanding _why_ it was fine — and when it absolutely wouldn't be — sent me down a path that completely changed how I think about pagination.
+
+This post is everything that clicked for me. We'll cover:
+
+- Why offset-based pagination is "dumb" in a specific, technical way
+- What cursor-based pagination actually does differently
+- How Relay formalised cursors into a standard
+- How to choose between them without overthinking it
+
+Grab your chai ☕ — this one's worth sitting with.
+
+---
+
+## First — What Even Is Pagination?
+
+Before we compare them, let's align on the problem.
+
+When an API has thousands of records, returning all of them at once is a bad idea — too much data, too slow, too memory-hungry. Instead, we return results in chunks. Pagination is the mechanism that controls _which chunk_ the client gets.
+
+The two dominant approaches for this are **offset-based** and **cursor-based**. They sound similar. They are not.
+
+---
+
+## Offset-Based Pagination
+
+### The Idea
+
+The client tells the server: _"Skip the first N items and give me the next M."_
+
+```graphql
+query GetPosts {
+  posts(offset: 40, limit: 20) {
+    id
+    title
+    author
+  }
+}
+```
+
+On the server this translates to pure array math:
+
+```typescript
+const getPosts = (offset: number, limit: number) => {
+  return ALL_POSTS.slice(offset, offset + limit);
+};
+
+// offset: 40, limit: 20
+// → returns ALL_POSTS[40] through ALL_POSTS[59]
+```
+
+Simple. Predictable. Easy to reason about.
+
+The client tracks `offset` and increments it by `limit` on each fetch:
+
+```typescript
+const fetchNextPage = () => {
+  const nextOffset = currentItems.length;
+  fetchMore({ variables: { offset: nextOffset, limit: 20 } });
+};
+```
+
+And if you want to know when to stop? The server returns a `total`:
+
+```graphql
+type PostsResult {
+  posts: [Post!]!
+  total: Int! # total count across ALL pages — not just this one
+}
+```
+
+```typescript
+// Client knows it's done when:
+const hasNextPage = currentItems.length < total;
+```
+
+### The Skipped Item Problem
+
+Here's where offset starts to crack. Imagine a list of 10 products:
+
+```
+Page 1 → items [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  (offset: 0, limit: 10)
+```
+
+While you're looking at Page 1, item #5 gets deleted. The list shifts:
+
+```
+After deletion → [1, 2, 3, 4, 6, 7, 8, 9, 10, 11]
+```
+
+When you request Page 2 `(offset: 10)`:
+
+```
+Server skips first 10 → starts from item #12
+Item #11 was never shown to you. It "slipped through" the gap.
+```
+
+> **⚠️ The list shrinks → you miss items.**
+
+### The Duplicate Item Problem
+
+This one is more common and more noticeable. A newsfeed where new posts appear at the top:
+
+```
+Page 1 → [post10, post9, post8, post7, post6, post5, post4, post3, post2, post1]
+```
+
+While you're reading, someone publishes a new post. It becomes `post11` at position #1:
+
+```
+Updated list → [post11, post10, post9, post8, post7, post6, post5, post4, post3, post2, ...]
+```
+
+When you request Page 2 `(offset: 10)`:
+
+```
+Server skips 10 → starts from index 10
+Index 10 is now post1 — which you already saw at the bottom of Page 1
+```
+
+> **⚠️ The list grows → you see items twice.**
+
+### Why This Happens
+
+Offset is "positional" — it says _"skip N positions"_, not _"skip N specific items."_ When the list changes shape, positions shift but the offset doesn't know or care.
+
+```typescript
+// Offset doesn't know what you've seen.
+// It only knows how many slots to skip.
+// That distinction is exactly the problem.
+```
+
+### When Offset Is Still The Right Choice
+
+Despite these drawbacks, offset is perfectly fine when:
+
+- **Data rarely mutates** — a list of dealers, product catalogue, search results. Nobody is inserting new dealers between your pages.
+- **You need "jump to page N"** — `offset = (page - 1) * limit` is trivial math. Cursors can't do this.
+- **Simpler implementation is preferred** — no cursor encoding, no special cache policies, just slice an array.
+
+For our dealer locator? Dealers don't change while a user is scrolling. Offset is completely safe and the right choice.
+
+---
+
+## Cursor-Based Pagination
+
+### The Idea
+
+Instead of saying _"skip 40 items"_, the client says _"give me items that come after this specific item."_
+
+The server returns a **cursor** alongside each result — a pointer to that item's position. The client sends the cursor back on the next request.
+
+```graphql
+query GetPosts($after: String, $limit: Int) {
+  posts(after: $after, limit: $limit) {
+    items {
+      id
+      title
+    }
+    pageInfo {
+      endCursor # cursor pointing to the last item returned
+      hasNextPage # whether more items exist after this
+    }
+  }
+}
+```
+
+First request — no cursor:
+
+```typescript
+// Fetch first 20
+fetchPosts({ variables: { limit: 20 } })
+
+// Server returns:
+{
+  items: [...20 posts],
+  pageInfo: {
+    endCursor: "YTI5Mjg3NDU=",  // cursor for the last item
+    hasNextPage: true
+  }
+}
+```
+
+Next request — pass the cursor back:
+
+```typescript
+// Fetch next 20 starting after the last seen item
+fetchPosts({ variables: { after: 'YTI5Mjg3NDU=', limit: 20 } });
+```
+
+The server doesn't skip N positions — it **finds the item the cursor points to and returns everything after it:**
+
+```typescript
+const getPosts = (after: string | null, limit: number) => {
+  if (!after) {
+    return ALL_POSTS.slice(0, limit);
+  }
+
+  const decodedCursor = decodeCursor(after); // e.g. a timestamp or ID
+  const startIndex = ALL_POSTS.findIndex(
+    (post) => post.createdAt < decodedCursor,
+  );
+
+  return ALL_POSTS.slice(startIndex, startIndex + limit);
+};
+```
+
+### Why Cursors Fix The Offset Problems
+
+Going back to our newsfeed example:
+
+```
+You last saw: post1 (cursor: "abc123" → points to post1's timestamp)
+
+New post11 gets added at the top.
+
+Next request: "give me posts after post1"
+Server finds post1 by its timestamp → returns post2 onward
+```
+
+It doesn't matter that the list grew. The cursor points to a **specific item**, not a position. The starting point is anchored to data, not an index.
+
+> **⚠️ The cursor says "after this specific item" — not "after position N."
+> The list can grow or shrink all it wants. The bookmark holds.**
+
+Same story for deletions. If the item the cursor pointed to gets deleted:
+
+```typescript
+// Timestamp-based cursor is resilient:
+SELECT * FROM posts WHERE created_at < $cursorTimestamp ORDER BY created_at LIMIT $limit
+// "Give me posts created before this moment in time"
+// Even if that exact post is gone, the timestamp still works
+```
+
+This is why cursors are typically **timestamps** or **encoded IDs** rather than raw row IDs — a timestamp survives deletions, a row ID might not.
+
+### What Is An Opaque Cursor?
+
+Notice the cursor we returned earlier: `"YTI5Mjg3NDU="` — that's not a meaningful string. It's a **base64 encoded** value.
+
+```typescript
+// Encoding a cursor (server side)
+const encodeCursor = (value: string): string =>
+  Buffer.from(value).toString('base64');
+
+// Decoding a cursor (server side)
+const decodeCursor = (cursor: string): string =>
+  Buffer.from(cursor, 'base64').toString('utf-8');
+
+// "2024-01-15T10:30:00Z" → "MjAyNC0wMS0xNVQxMDozMDowMFo="
+```
+
+Why hide it? Three reasons:
+
+1. **Abstraction** — the client doesn't need to know or care how the cursor works internally. It's a black box to pass back.
+2. **Security** — if users can see `cursor = 12345`, they might try to manually construct cursors. Encoding prevents this.
+3. **Flexibility** — the server can change cursor internals (switch from ID to timestamp) without breaking any client that treats it as opaque.
+
+```typescript
+type PageInfo = {
+  endCursor: string | null; // opaque — client never decodes this
+  hasNextPage: boolean;
+};
+```
+
+### The Trade-Off You Give Up
+
+Cursors buy you stability but cost you one thing — **you cannot jump to arbitrary pages.**
+
+```typescript
+// Offset — trivial
+const jumpToPage = (page: number, limit: number) => ({
+  offset: (page - 1) * limit,
+});
+
+// Cursor — impossible without fetching every preceding page first
+// "Page 5" has no meaning — you'd need page 1's cursor, then page 2's, etc.
+```
+
+If your UI has a "jump to page 10" button, offset is your only option. Cursor pagination is strictly sequential — forward only.
+
+---
+
+## Relay: The Standard That Formalised Cursors
+
+When Facebook open-sourced GraphQL, they also introduced **Relay** — a client-side framework with its own pagination spec. Most GraphQL ecosystems reference it today even without using Relay itself.
+
+Relay formalised cursor pagination into a consistent shape using three concepts:
+
+```
+Connection → the whole paginated list
+Edge       → a single item + its cursor bundled together
+Node       → the actual data item inside the Edge
+```
+
+In GraphQL schema form:
+
+```graphql
+type PostConnection {
+  edges: [PostEdge!]!
+  pageInfo: PageInfo!
+}
+
+type PostEdge {
+  node: Post! # the actual item
+  cursor: String! # that item's position bookmark
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+  startCursor: String
+  hasPreviousPage: Boolean!
+}
+```
+
+The query looks like:
+
+```graphql
+query {
+  posts(first: 10, after: "opaqueCursor") {
+    edges {
+      cursor # each item gets its OWN cursor
+      node {
+        id
+        title
+      }
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+  }
+}
+```
+
+The key Relay innovation — **every item gets its own cursor**, not just the last one. This lets you start pagination from any arbitrary item in the list, not just the end.
+
+Apollo Client has built-in support for this via `relayStylePagination()`:
+
+```typescript
+const client = new ApolloClient({
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          posts: relayStylePagination(), // handles merge automatically
+        },
+      },
+    },
+  }),
+});
+```
+
+For offset-based pagination you handle the cache merge manually — which is a separate topic worth its own post.
+
+---
+
+## Side By Side
+
+|                      | Offset                                | Cursor                          |
+| -------------------- | ------------------------------------- | ------------------------------- |
+| Query args           | `offset, limit`                       | `after, limit`                  |
+| Server logic         | `array.slice(offset, offset + limit)` | find cursor → return next N     |
+| Stable under inserts | ❌ Duplicates                         | ✅ Stable                       |
+| Stable under deletes | ❌ Skips items                        | ✅ Stable                       |
+| Jump to page N       | ✅ Easy                               | ❌ Not possible                 |
+| Implementation       | Simple                                | More complex                    |
+| Apollo cache         | Manual `merge`                        | `relayStylePagination()`        |
+| Best for             | Static / rarely mutating data         | Live / frequently mutating data |
+
+---
+
+## How To Choose
+
+One question settles it:
+
+> **Does new data appear at the top of the list while users are actively scrolling through it?**
+
+- **Yes** → Cursors. Twitter feed, notifications, chat messages. New items push everything down and offset will show duplicates.
+- **No** → Offset is fine. Dealer locator, product catalogue, search results. The data is stable between requests. Offset's instability never materialises.
+
+The mistake I see most often is reaching for cursor complexity when offset was completely adequate. A recipe list that hasn't changed in six months doesn't need cursor pagination. A live activity feed absolutely does.
+
+---
+
+## Wrapping Up
+
+Page numbers aren't broken — they're just making an assumption: _"the list isn't changing while you're looking at it."_ When that assumption holds, they work perfectly. When it doesn't, you get ghosts and missing items.
+
+Cursors drop that assumption entirely. They don't care what the list looked like before your request — they only care about _"what comes after this specific item."_
+
+Understanding this distinction doesn't just help you pick the right pagination strategy. It changes how you think about stateful data fetching in general — which, as it turns out, is one of the more interesting problems in frontend engineering.
+
+Pranipat 🙏!
