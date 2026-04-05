@@ -1,30 +1,26 @@
 ---
 title: 'Page Numbers Lie: Offset vs Cursor Pagination'
 description: 'Why the humble "next page" button is hiding a dark secret — and how cursor-based pagination fixes it for good.'
-date: 2026-03-31
+date: 2026-04-05
 tags: ['graphql', 'javascript', 'typescript', 'backend', 'api-design']
 ---
 
-## The PR Comment That Sent Me Spiralling
+## From Interview Notes To Production Reality
 
-It was a normal Tuesday. I had just raised a PR for our infinite scroll implementation — proud of it, honestly. Clean code, working demo, ready to ship.
+While I was preparing for interviews, I came across a high-level system design for a News Feed — specifically from the frontend perspective. That's where I first encountered the terms _offset-based_ and _cursor-based_ pagination.
 
-Then the comment appeared:
+I read about them. Briefly. You know how interview prep goes — there's always more ground to cover than time allows, so you skim what you can, bookmark the rest, and silently promise yourself you'll come back to it. Spoiler: you don't. 😅
 
-> "Have you considered cursor-based pagination instead of offset here?"
+Fast forward to recently — a requirement came up at work to implement infinite scroll with virtualization. And just like that, pagination was back on my desk, except this time it wasn't optional reading. It was a production decision.
 
-I typed back a confident _"offset works fine for our use case"_ — and then immediately opened a new tab to make absolutely sure that was true. 😅
+So I finally sat down, went deep, and now here we are. This post is everything that clicked for me.
 
-Turns out, it _was_ fine for our use case. But understanding _why_ it was fine — and when it absolutely wouldn't be — sent me down a path that completely changed how I think about pagination.
-
-This post is everything that clicked for me. We'll cover:
+We'll cover:
 
 - Why offset-based pagination is "dumb" in a specific, technical way
 - What cursor-based pagination actually does differently
 - How Relay formalised cursors into a standard
 - How to choose between them without overthinking it
-
-Grab your chai ☕ — this one's worth sitting with.
 
 ---
 
@@ -154,7 +150,7 @@ Despite these drawbacks, offset is perfectly fine when:
 - **You need "jump to page N"** — `offset = (page - 1) * limit` is trivial math. Cursors can't do this.
 - **Simpler implementation is preferred** — no cursor encoding, no special cache policies, just slice an array.
 
-For our dealer locator? Dealers don't change while a user is scrolling. Offset is completely safe and the right choice.
+For our production app use-case? this was the goto approach since data don't change while a user is scrolling.
 
 ---
 
