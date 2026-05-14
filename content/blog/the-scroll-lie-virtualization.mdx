@@ -1,494 +1,306 @@
 ---
 title: 'The Scroll Lie: Virtualization + Infinite Scroll in React'
-description: 'How virtualization tricks your browser into thinking 1000 rows exist while only rendering 10 — and how infinite scroll completes the picture.'
-date: 2026-03-16
-tags: ['react', 'typescript', 'performance', 'tanstack']
+description: 'Understanding the concept is the easy part. Here is what production actually teaches you.'
+date: 2026-05-14
+tags: ['react', 'typescript', 'performance', 'tanstack', 'graphql']
 ---
 
-## The Jank That Started It All
+## Knowing vs. Shipping
 
-It was a regular sprint planning. My TL was going through the backlog items when he casually dropped this one:
+There's a version of this post where I pretend I'd never heard of virtualization before some senior engineer casually dropped it in sprint planning and I nodded confidently while internally panicking. That version is more dramatic. It's also not true.
 
-> "We need virtualization and infinite scroll on the results list. The API has limit and offset so we'll use that."
+I'd implemented virtualization before. Understood the phantom container trick, had shipped infinite scroll with Apollo, knew what `useVirtualizer` did. Confident enough that when a similar requirement landed recently, I figured it would be a clean, familiar implementation.
 
-The way he said it — completely unbothered, like he'd just asked someone to rename a variable. Moved on to the next ticket in literally four seconds.
+Production had a different opinion. 😅
 
-I nodded. Confidently. The kind of nod that says _"yes, absolutely, I know exactly what that means"_ while the brain quietly whispers _"...do we though?"_ 😅
+What I didn't account for were the edge cases that only surface when real data meets real layout complexity — cards with inconsistent heights, panels opening mid-scroll, cache policies that silently swallow your pagination without a single error in the console. None of that lives in any tutorial I've read.
 
-I'd heard of virtualization. Used the word in conversations before. But actually sitting down and implementing it — with infinite scroll on top of it, with a real paginated API — was a different story. I wasn't going to walk into that PR review unprepared and have my TL ask me _"so why did you put the virtualizer here"_ while I stare at the screen like a startled cat.
-
-So I cleared my afternoon, made some chai ☕, and decided to actually understand this properly — not just copy-paste from a tutorial and hope for the best.
-
-This post is everything I understood that afternoon, written down clearly.
-
-We'll cover:
-
-- Why lists get slow and what the browser is actually doing
-- What virtualization does (the "lie" it tells — and why it works)
-- Where infinite scroll fits in as a _separate_ concern
-- Implementing both with [TanStack Virtual](https://tanstack.com/virtual/latest)
-
-Let's get into it.
+So this post has two parts. First is the concept — clean, quick, linking out where I've already written the deep dive. Second is what actually happened when we shipped it. The stuff that only production teaches you.
 
 ---
 
-## Why Lists Get Slow
+## First — A Quick Name Thing
 
-When you render a list of 500 items in React, you're not just rendering 500 components. You're creating **500 real DOM nodes**. Each one carries:
-
-- Its own memory footprint
-- Layout and style recalculations
-- Paint and composite costs
-- Scroll event overhead
-
-The browser doesn't care that 480 of those nodes are nowhere near the viewport. It tracks, computes, and manages all of them. Every scroll event. Every frame.
-
-Here's what an innocent-looking list component actually does at scale:
-
-```tsx
-// Looks totally fine...
-const ResultsList = ({ items }: { items: Item[] }) => (
-  <ul>
-    {items.map((item) => (
-      <li key={item.id}>
-        <ResultCard item={item} />
-      </li>
-    ))}
-  </ul>
-);
-
-// But at 500 items the DOM looks like:
-// <ul>
-//   <li>...</li>   ← DOM node
-//   <li>...</li>   ← DOM node
-//   ... × 500
-// </ul>
-// 500 nodes. All alive. All tracked by the browser.
-```
-
-This is where the jank comes from. The fix isn't to render a faster card component or optimize your CSS. The fix is to stop creating DOM nodes for things the user isn't looking at.
+Virtualization and windowing are the same thing. You will see both terms scattered across docs, blog posts, and Stack Overflow answers depending on who wrote them. TanStack calls their library `@tanstack/react-virtual`. React's own documentation uses the word "windowing." Same technique, different vocabulary. Now we're aligned and you won't get confused mid-googling.
 
 ---
 
-## The Lie Virtualization Tells
+## The Two Concerns You Need To Separate
 
-Virtualization's entire premise is this: **only create DOM nodes for items inside the visible viewport.**
+Before anything else, this distinction is the most important thing in this post:
 
-If your list can show 8 cards at a time, you maintain roughly 10–12 DOM nodes (a small buffer above and below). The rest simply don't exist in the DOM.
+**Virtualization manages the DOM. Infinite scroll manages the data.**
 
-```
-Data array (in JS memory): 500 items ✅
-Visible area:              items 40–48
-DOM nodes alive:           items 36–52 (with buffer)
-DOM nodes that don't exist: items 1–35 and 53–500
-```
-
-But here's the catch — if you just rendered 12 items, the scrollbar would look completely wrong. It would behave like there are only 12 items total. That breaks the whole experience.
-
-So virtualization has to maintain an illusion. And it does it with two clever tricks.
-
----
-
-## How The Illusion Works
-
-### Trick 1: The Phantom Container
-
-The outer wrapper gets an explicit height equal to what the **full list would be** if every item was rendered:
-
-```
-Total height = itemCount × itemHeight
-             = 500 × 72px
-             = 36000px
-```
-
-This 36,000px invisible box makes the scrollbar behave as if all 500 items are present. The user's muscle memory for scroll distance stays intact.
-
-### Trick 2: Absolute Positioning
-
-The actual rendered items sit **absolutely** inside that phantom container, placed at the exact pixel offset where they should visually appear:
-
-```
-Item 40 → top: 40 × 72 = 2880px
-Item 41 → top: 41 × 72 = 2952px
-Item 42 → top: 42 × 72 = 3024px
-```
-
-As the user scrolls, the library runs a tight loop:
-
-1. Read `scrollTop` from the scroll container
-2. Calculate which items _should_ be visible
-3. Unmount DOM nodes that scrolled out of range
-4. Mount DOM nodes for items entering the viewport
-5. Position each one at the correct absolute offset
-6. User sees nothing unusual. Scroll feels natural.
-
-```
-User scrolls (scrollTop = 2900px)
-         ↓
-startIndex = Math.floor(2900 / 72) = 40
-endIndex   = startIndex + visibleCount + overscan buffer
-         ↓
-Render items 37–53
-Position each at (index × 72)px from the top
-         ↓
-~15 DOM nodes instead of 500
-```
-
-This calculation runs on every scroll event, which is why libraries like TanStack Virtual are so carefully optimized — it has to be _fast_.
-
----
-
-## An Important Distinction Before We Add Infinite Scroll
-
-There's one thing I want to be very explicit about, because it confused me initially.
-
-**Virtualization destroys DOM nodes. It does NOT destroy data.**
-
-When item 12 scrolls out of view, its `<div>` is removed from the DOM. But the JavaScript object for that item is still sitting in your array, in memory. It never goes anywhere.
-
-```
-JS memory (your array) — always intact:
-[item1, item2, ..., item12, ..., item42, ..., item500]
-
-DOM — just a snapshot of what's visible right now:
-<ResultCard item={item40} />
-<ResultCard item={item41} />
-<ResultCard item={item42} />  ← you're here
-<ResultCard item={item43} />
-```
-
-So when a user scrolls down to item 200 and then scrolls back up to item 12, **no API call is made.** The data was already fetched. Virtualization just gives it a DOM node again.
-
-This distinction matters a lot when we bring infinite scroll into the picture.
-
----
-
-## Where Infinite Scroll Fits In
-
-Virtualization manages the **DOM**. Infinite scroll manages the **data**. They're two completely separate concerns.
+They are completely separate concerns that happen to work beautifully together.
 
 | Concern                       | What solves it               |
 | ----------------------------- | ---------------------------- |
 | Too many DOM nodes            | Virtualization               |
 | Too much data fetched upfront | Infinite scroll (pagination) |
 
-Infinite scroll watches how far the user has scrolled through the _currently loaded_ data. When they're close to the bottom, it fires an API request for the next page.
-
-```
-API has 600 items total
-
-→ Fetch page 1 (items 1–20)
-   Virtualization renders ~10 DOM nodes from those 20
-
-→ User scrolls, approaching item 17
-   Trigger: fetch page 2 (items 21–40)
-   Now 40 items in memory, still ~10 DOM nodes in the DOM
-
-→ User scrolls, approaching item 37
-   Trigger: fetch page 3 (items 41–60)
-   60 items in memory. DOM still lean.
-
-→ User scrolls back up to item 5
-   Zero API calls. Data is in memory.
-```
-
-The JS array **only ever grows**. The DOM stays small throughout.
-
-Combine both and you get a list that feels instant to scroll, never fetches more than it needs to, and handles thousands of items without breaking a sweat.
+If you want to understand _why_ pagination matters — offset vs cursor, when each breaks, how Apollo caches pages — I wrote that in detail [here](https://manuj-sankrit-8055.vercel.app/blog/offset-vs-cursor-pagination). This post assumes you've got that context and focuses entirely on the rendering side.
 
 ---
 
-## Implementing It With TanStack Virtual
+## The Lie The Scroll Tells
 
-Enough theory. Let's build it.
+When you render 500 items in React, you create 500 real DOM nodes. Each one has memory, layout cost, paint cost, scroll overhead. The browser faithfully tracks all of them on every frame — even the 480 that are nowhere near the viewport.
+
+Virtualization fixes this with an elegant deception.
+
+**Only create DOM nodes for items inside the visible viewport.** Everything else simply doesn't exist in the DOM.
+
+But if you only render 12 items, the scrollbar would behave like there are only 12 items. The whole illusion falls apart. So virtualization maintains the lie with two tricks:
+
+**Trick 1 — The Phantom Container**
+
+The outer wrapper gets an explicit height equal to what the full list _would_ be if every item was rendered:
+
+```
+Total height = itemCount × itemHeight = 500 × 72px = 36,000px
+```
+
+This invisible box makes the scrollbar behave correctly. The user's scroll muscle memory stays intact. They have no idea only 12 DOM nodes are alive.
+
+**Trick 2 — Absolute Positioning**
+
+Rendered items sit absolutely inside that phantom container, placed at the exact pixel offset where they should visually appear. As the user scrolls, the library runs a tight loop — read `scrollTop`, calculate which items should be visible, mount those DOM nodes, position them, unmount the rest.
+
+```
+User scrolls → scrollTop = 2900px
+startIndex = Math.floor(2900 / 72) = 40
+→ Render items 37–53
+→ ~15 DOM nodes instead of 500
+```
+
+This runs on every scroll event, which is why it has to be fast. And why the virtualizer's internals are carefully optimised — you don't need to worry about that part, but you do need to feed it accurate information. More on that shortly.
+
+---
+
+## The Implementation
 
 ```bash
 npm install @tanstack/react-virtual
 ```
 
-### Understanding `useVirtualizer`
-
-The main hook is `useVirtualizer`. Let's go through its options and map each one back to what we discussed:
+The core hook:
 
 ```ts
 const virtualizer = useVirtualizer({
-  // Total item count — this is what determines the phantom container height
-  count: items.length,
-
-  // The DOM element that actually scrolls
-  // Must have overflow-y: auto or scroll
-  getScrollElement: () => scrollRef.current,
-
-  // Height estimate per item — used for phantom height and initial offset math
-  // For uniform card heights, this can be exact
-  estimateSize: () => 72,
-
-  // Buffer — extra items to render above and below the visible area
-  // Higher = smoother scroll, more DOM nodes
-  // 5 is a good default for most lists
-  overscan: 5,
+  count: items.length, // drives phantom container height
+  getScrollElement: () => scrollRef.current, // must point to the element with overflow-y scroll
+  estimateSize: () => 72, // item height estimate in px
+  overscan: 5, // buffer items above and below viewport
 });
 ```
 
-And what comes back:
+What comes back:
 
 ```ts
-// Items that should be in the DOM right now
-const items = virtualizer.getVirtualItems();
-// e.g. [{ index: 40, start: 2880, size: 72, key: 40 }, ...]
-//   index → position in your data array
-//   start → translateY value (where to place it)
-
-// The phantom container height
-const totalHeight = virtualizer.getTotalSize();
-// e.g. 36000px
+virtualizer.getVirtualItems(); // which items to render right now
+virtualizer.getTotalSize(); // phantom container height
+// Each virtual item: { index, start, size, key }
 ```
 
-> **⚠️ `getScrollElement` is the most important option to get right.** It must point to the element with `overflow-y: scroll` or `auto` — not a parent, not `document.body`, but the actual scrolling container. If this is wrong, the virtualizer's scroll calculations will be off.
-
-### A Plain Virtualized List
+The render structure:
 
 ```tsx
-import { useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
-
-type Item = {
-  id: string;
-  title: string;
-  description: string;
-};
-
-type VirtualListProps = {
-  items: Item[];
-};
-
-export const VirtualList = ({ items }: VirtualListProps) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const virtualizer = useVirtualizer({
-    count: items.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 72,
-    overscan: 5,
-  });
-
-  return (
-    // Fixed height scroll container
-    <div ref={scrollRef} style={{ height: '600px', overflowY: 'auto' }}>
-      {/* Phantom container — full list height */}
-      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-        {virtualizer.getVirtualItems().map((virtualItem) => (
-          // Absolutely positioned at its exact offset
-          <div
-            key={virtualItem.key}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              // transform instead of top for GPU compositing
-              transform: `translateY(${virtualItem.start}px)`,
-            }}
-          >
-            <ResultCard item={items[virtualItem.index]} />
-          </div>
-        ))}
+<div ref={scrollRef} style={{ height: '600px', overflowY: 'auto' }}>
+  <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+    {virtualizer.getVirtualItems().map((virtualItem) => (
+      <div
+        key={virtualItem.key}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          transform: `translateY(${virtualItem.start}px)`, // GPU compositing > top offset
+        }}
+      >
+        <ResultCard item={items[virtualItem.index]} />
       </div>
-    </div>
-  );
-};
+    ))}
+  </div>
+</div>
 ```
 
-> **⚠️ `transform` vs `top`:** We use `transform: translateY(${virtualItem.start}px)` rather than `top: ${virtualItem.start}px`. Transforms are composited on the GPU and don't trigger layout recalculations. Slightly but meaningfully better for scroll performance — which is exactly the thing we're trying to improve here.
+> **⚠️ `getScrollElement` is the most important option to get right.** It must point to the element with `overflow-y: scroll` or `auto` — not a parent wrapper, not `document.body`, the actual scrolling container. Wrong element means broken scroll calculations, and the virtualizer gives you no helpful error about it.
 
-### Adding Infinite Scroll
-
-The trigger logic is straightforward — watch the last visible item index and compare it against the total fetched count:
+Wiring in infinite scroll is a `useEffect` watching the last visible item:
 
 ```ts
-const THRESHOLD = 5; // fetch when within 5 items of the bottom
+useEffect(() => {
+  const lastItem = virtualItems[virtualItems.length - 1];
+  if (!lastItem) return;
 
-const lastVisibleItem = virtualItems[virtualItems.length - 1];
-
-if (
-  lastVisibleItem &&
-  lastVisibleItem.index >= items.length - THRESHOLD &&
-  hasNextPage &&
-  !isFetchingNextPage
-) {
-  fetchNextPage();
-}
+  if (
+    lastItem.index >= items.length - 5 &&
+    hasNextPage &&
+    !isFetchingNextPage
+  ) {
+    fetchNextPage();
+  }
+}, [virtualItems, items.length]);
 ```
 
-Here's the full component with both concerns wired together:
+That's the concept. Clean, composable, works great in a sandbox.
 
-```tsx
-import { useEffect, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
-
-type PaginationConfig = {
-  hasNextPage: boolean;
-  isFetchingNextPage: boolean;
-  onFetchNextPage: () => void;
-};
-
-type InfiniteVirtualListProps = {
-  items: Item[];
-  paginationConfig?: PaginationConfig; // optional — plain list if not passed
-};
-
-export const InfiniteVirtualList = ({
-  items,
-  paginationConfig,
-}: InfiniteVirtualListProps) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const virtualizer = useVirtualizer({
-    count: items.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 72,
-    overscan: 5,
-  });
-
-  const virtualItems = virtualizer.getVirtualItems();
-
-  // Infinite scroll trigger
-  useEffect(() => {
-    if (!paginationConfig) return;
-
-    const { hasNextPage, isFetchingNextPage, onFetchNextPage } =
-      paginationConfig;
-    const lastItem = virtualItems[virtualItems.length - 1];
-
-    if (!lastItem) return;
-
-    if (
-      lastItem.index >= items.length - 5 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
-      onFetchNextPage();
-    }
-  }, [virtualItems, items.length, paginationConfig]);
-
-  return (
-    <div ref={scrollRef} style={{ height: '600px', overflowY: 'auto' }}>
-      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-        {virtualItems.map((virtualItem) => (
-          <div
-            key={virtualItem.key}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${virtualItem.start}px)`,
-            }}
-          >
-            <ResultCard item={items[virtualItem.index]} />
-          </div>
-        ))}
-      </div>
-
-      {/* Loading indicator below the list */}
-      {paginationConfig?.isFetchingNextPage && (
-        <div style={{ padding: '16px', textAlign: 'center' }}>
-          Loading more...
-        </div>
-      )}
-    </div>
-  );
-};
-```
-
-> **⚠️ `paginationConfig` is optional by design.** If you don't pass it, you get a plain virtualized list — no infinite scroll, no API triggers. If you pass it, infinite scroll activates. This keeps the component clean for consumers who don't need pagination, without any breaking changes.
+Now for the part that doesn't make it into tutorials.
 
 ---
 
-## What About Variable Height Items?
+## What Production Actually Taught Me
 
-Everything above assumes each item is the same height. If your cards vary — say some have an extra line of text or an optional image — use `measureElement` to let TanStack Virtual measure each item after it renders:
+We shipped this in a real app — a shared component library consumed by multiple teams, with Apollo handling server-side offset pagination. Here is what we did not see coming.
+
+### 1. Your `estimateSize` Is Probably Wrong. By a Lot.
+
+Every example online passes something neat like `72` or `80` to `estimateSize`. Real cards are not neat.
+
+Our initial estimate was `98px`. Real rendered height was `~162px` — because of badges, variable address lengths, and padding that looks small on a design file and isn't. The gap between estimate and reality causes jitter on initial render as the virtualizer corrects its position table item by item. Not a crash, not a console error — just a slightly janky first impression.
+
+The fix: measure a few real rendered cards, bump your estimate _up_ rather than down when guessing, and use `measureElement` for genuinely dynamic heights:
 
 ```tsx
-const virtualizer = useVirtualizer({
-  count: items.length,
-  getScrollElement: () => scrollRef.current,
-  estimateSize: () => 80, // rough estimate, doesn't need to be exact
-  overscan: 5,
-});
+<div
+  ref={virtualizer.measureElement}
+  data-index={virtualItem.index}
+  style={{
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    transform: `translateY(${virtualItem.start}px)`,
+  }}
+>
+  <ResultCard item={items[virtualItem.index]} />
+</div>
+```
 
-// In your item render:
+The virtualizer measures each card's real height after it renders and builds an accurate offset table. Jitter disappears.
+
+### 2. `measureElement` Can Return 0. And It Will Silently Corrupt Everything.
+
+This one cost us real debugging time.
+
+When a details panel opened alongside the list, it triggered a layout recalculation. During that recalculation, `ResizeObserver` callbacks fired and `getBoundingClientRect()` returned `0` for some items — not an error, just `0`. The virtualizer dutifully wrote those zeroes into its position cache. Subsequent items stacked on top of each other at position `0`.
+
+The list looked like a car crash.
+
+The fix is a single guard in your `measureElement` callback:
+
+```ts
+// If the measured height comes back as 0, fall back to estimated height
+if (measuredHeight === 0) return estimatedItemHeight;
+```
+
+One line. Not something you'd think to add until production bites you.
+
+### 3. Cards Need Uniform Height. More Than You Think.
+
+Our result cards had an optional badges row. Cards with badges rendered taller than cards without. Inconsistent heights meant the virtualizer's measurements were slightly different for every card, which accumulated into misalignment errors mid-scroll — items drifting out of place the further down the list you went.
+
+The fix that actually worked: an invisible placeholder `div` matching the badge row height on cards that have no badges.
+
+```tsx
 {
-  virtualItems.map((virtualItem) => (
-    <div
-      key={virtualItem.key}
-      // Pass ref + data-index so the virtualizer can measure this element
-      ref={virtualizer.measureElement}
-      data-index={virtualItem.index}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        transform: `translateY(${virtualItem.start}px)`,
-      }}
-    >
-      <ResultCard item={items[virtualItem.index]} />
-    </div>
-  ));
+  badges.length > 0 ? (
+    <BadgeRow badges={badges} />
+  ) : (
+    <div aria-hidden='true' style={{ height: '24px' }} /> // invisible spacer
+  );
 }
 ```
 
-The virtualizer measures the rendered height of each item and builds an offset map. The phantom container height adjusts dynamically as items are measured. For most card-based UIs with consistent structure, you won't need this — but it's worth knowing it exists.
+All cards are now uniformly tall regardless of content. Virtualizer measurements stabilise. `aria-hidden="true"` keeps screen readers from stumbling over an empty div. It's the kind of solution that looks bizarre in a PR review and makes complete sense the moment you know the why.
+
+### 4. The Scroll Container Needs `flex: 1, minHeight: 0`. Trust Me.
+
+The virtualizer needs a bounded height to scroll inside. If its parent container can grow freely, the scroll container expands to fit all content — and you effectively have no virtualization at all, just a very elaborate static list.
+
+```css
+.list-container {
+  flex: 1;
+  min-height: 0; /* 👈 this is the one */
+  overflow: hidden;
+}
+```
+
+`min-height: 0` overrides the default `min-height: auto` on flex children that prevents them from shrinking below their content height. Without it, `overflow: auto` on the scroll container never triggers. This will take you an hour to find and one line to fix.
+
+### 5. Apollo's Cache Will Silently Eat Your Pages.
+
+By default, Apollo replaces the cached result entirely on every `fetchMore` call. Page 1 loads — great. Page 2 fetches — page 1 disappears. The list silently resets to 20 items. No error, no warning, no indication anything is wrong.
+
+The fix is a custom type policy that tells Apollo to accumulate pages rather than replace them:
+
+```ts
+results: {
+  keyArgs: ['location', 'filters'],   // what makes this query unique in the cache
+  merge(existing, incoming, { args }) {
+    if (!existing || args?.offset === 0) {
+      return incoming;  // fresh search: replace entirely
+    }
+    return {
+      ...incoming,
+      items: [...existing.items, ...incoming.items],  // paginating: append
+    };
+  },
+}
+```
+
+The `offset === 0` guard is important. When the user changes their search, you want a complete cache reset — not the new results appended to the previous ones. Without it, dealers from Mumbai silently stack on top of dealers from Delhi and everyone is confused.
+
+For a deeper understanding of why offset pagination works this way (and when cursor-based pagination is the better call), [that post covers it in full](https://manuj-sankrit-8055.vercel.app/blog/offset-vs-cursor-pagination).
+
+### 6. Stale Closures Will Find You.
+
+Inside a `scrollToIndex` effect, we referenced the items array directly from the closure. When a new page loaded, the effect still held a reference to the old array. Scroll positions were calculated against stale data, and the virtualizer jumped to the wrong item.
+
+```ts
+// Problem — locations is stale by the time the effect runs
+useEffect(() => {
+  virtualizer.scrollToIndex(locations.findIndex((l) => l.id === selectedId));
+}, [selectedId]);
+
+// Fix — ref stays current
+const locationsRef = useRef(locations);
+useEffect(() => {
+  locationsRef.current = locations;
+}, [locations]);
+
+useEffect(() => {
+  virtualizer.scrollToIndex(
+    locationsRef.current.findIndex((l) => l.id === selectedId),
+  );
+}, [selectedId]);
+```
+
+Stale closures in effects are not new territory. But they are particularly sneaky inside virtualizer logic because the symptom — wrong scroll position — looks like a virtualizer bug rather than a React hooks bug. You spend time reading TanStack docs when the problem is in your own effect.
 
 ---
 
-## TanStack Virtual — Quick Reference
-
-**`useVirtualizer` options:**
-
-| Option             | Type                        | What it does                                  |
-| ------------------ | --------------------------- | --------------------------------------------- |
-| `count`            | `number`                    | Total items — drives phantom container height |
-| `getScrollElement` | `() => HTMLElement \| null` | The scrolling container                       |
-| `estimateSize`     | `() => number`              | Item height estimate in px                    |
-| `overscan`         | `number`                    | Buffer items outside the viewport             |
-| `measureElement`   | ref callback                | For variable/dynamic item heights             |
-
-**What comes back:**
-
-| Property            | What it gives you          |
-| ------------------- | -------------------------- |
-| `getVirtualItems()` | Items to render right now  |
-| `getTotalSize()`    | Phantom container height   |
-| `VirtualItem.index` | Index into your data array |
-| `VirtualItem.start` | `translateY` value         |
-| `VirtualItem.key`   | Stable React key           |
-
----
-
-## Putting It All Together
-
-Here's the mental model that makes everything click:
+## The Mental Model That Makes It Click
 
 ```
-Your API → JS array (grows with each page)
-               ↓
-    Virtualization reads the array
-               ↓
-    Keeps ~10 DOM nodes alive at any time
-               ↓
-    User scrolls near bottom of loaded data
-               ↓
-    Infinite scroll → API call → array grows
-               ↓
-    Back to top. DOM stays lean throughout.
+API → JS array (grows with each page, never shrinks)
+           ↓
+  Virtualization reads the array
+           ↓
+  Keeps ~15 DOM nodes alive at any time
+           ↓
+  User scrolls near bottom of loaded data
+           ↓
+  Infinite scroll → API call → array grows
+           ↓
+  Back to top. DOM stays lean throughout.
 ```
 
-DOM nodes are cheap when there are 10 of them. They're expensive when there are 500. Virtualization is the difference between the two — and infinite scroll is what makes sure the data side never gets ahead of what the user actually needs.
+JS array grows. DOM stays flat. That is the whole game.
 
-That flame graph I was staring at before? Completely different story once both were in place. The scroll was smooth, the memory stayed flat, and the browser stopped complaining.
+The concept takes an afternoon to understand. The sandbox takes a day to build. Production takes longer still — not because the implementation is hard, but because real data surfaces edge cases that a clean demo never replicates. The card height inconsistencies, the panel interactions, the cache behavior, the CSS gotcha that silently disables your scroll container.
 
-If you're building any kind of long list with paginated data, you almost certainly need both of these working together. The good news is they're simpler to implement than they look — once you understand what each one is actually doing.
+You now know what to look for before you go looking.
 
 Pranipat 🙏!
