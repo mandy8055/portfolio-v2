@@ -1,0 +1,296 @@
+---
+title: 'How Resumable Uploads and Downloads Actually Work'
+description: 'A snacks conversation I could not answer properly sent me down a rabbit hole. Here is everything I found — in one place, finally.'
+date: 2026-05-14
+tags:
+  ['backend', 'system-design', 'javascript', 'typescript', 'web-development']
+---
+
+## It Started Over Snacks
+
+A colleague of mine — backend engineer, sharp, the kind of person who asks questions that sound casual but aren't — turned to me during a snack break and asked:
+
+> "How do resumable uploads actually work? Like, how does the server know exactly where to pick up from?"
+
+I knew this. I was sure I knew this. I opened my mouth and what came out was technically not wrong but somehow completely unsatisfying. Something about chunks. And tracking. And the server storing state somewhere. She nodded politely. I nodded back. We both reached for more snacks and the topic quietly moved on.
+
+But the question stayed in my head. Because I _did_ know this — just not cleanly enough to explain it over a samosa. 😅
+
+So I went looking for a proper consolidated explanation. And found that the information is genuinely scattered — spread across RFC documents, S3 multipart upload docs, random Stack Overflow threads, and blog posts that each cover one piece but never the whole picture.
+
+This post is that whole picture. Everything in one place. So the next time someone asks you this over snacks, you are ready.
+
+---
+
+## First — Why Naive Transfers Just Give Up
+
+HTTP is stateless. When a connection drops mid-transfer, the server has no obligation to remember what it received. A naive implementation throws the partial data away and forces a complete restart.
+
+For a 2MB image, this is annoying. For a 500MB video, this is a crisis. Resumable transfers solve this by doing two things:
+
+1. Splitting the file into **chunks** — independent pieces that can be sent and confirmed separately
+2. **Tracking progress explicitly** — so both sides always know exactly what has been confirmed
+
+That's the whole idea. Everything else is implementation detail.
+
+---
+
+## Resumable Uploads
+
+### Step 1 — Initiation
+
+Before sending a single byte, the client registers the upload with the server.
+
+```
+POST /uploads/initiate
+{ "fileName": "video.mp4", "fileSize": 524288000, "totalChunks": 100 }
+
+Response: { "uploadId": "upload_xK92mPqR7", "chunkSize": 5242880 }
+```
+
+The server creates a session in the database:
+
+```
+uploadId         | totalChunks | receivedChunks | status
+upload_xK92mPqR7 | 100         | []             | in_progress
+```
+
+That `uploadId` is the bookmark. Everything that follows references it.
+
+### Step 2 — Chunking on the Client
+
+The file gets sliced into chunks using `Blob.slice()` — lazy evaluation, doesn't load the entire file into memory at once:
+
+```typescript
+const chunk = file.slice(chunkIndex * CHUNK_SIZE, end);
+```
+
+Each chunk is sent with a `Content-Range` header so the server knows exactly which byte range it is receiving:
+
+```
+PUT /uploads/{uploadId}/chunk/{chunkIndex}
+Content-Range: bytes 0-5242879/524288000
+```
+
+### Step 3 — Connection Drops
+
+Server has chunks 0–42 stored. The session row in the DB still exists with `receivedChunks: [0..42]`. Nothing is lost — the progress is the state in the database, not the connection itself.
+
+### Step 4 — Resuming
+
+Before re-sending anything, the client asks the server what it actually confirmed:
+
+```
+GET /uploads/upload_xK92mPqR7/status
+→ { "receivedChunks": [0..42], "nextExpectedChunk": 43 }
+```
+
+Client resumes from chunk 43. Chunks 0–42 are never re-sent. The `uploadId` is what makes this possible — it's the key that unlocks the server's memory of this specific upload.
+
+### Step 5 — Completion
+
+Once all chunks arrive, the server verifies nothing is missing, assembles them in order, cleans up temp storage, and marks the session complete.
+
+---
+
+## The Production Pattern — DB + Blob Storage + Presigned URLs
+
+Here's something that surprises people: **never store large files in a database.** The standard production pattern separates concerns cleanly:
+
+```
+DB    → metadata + uploadId + storage key + status + receivedChunks[]
+S3    → actual bytes, nothing else
+```
+
+Why not the database for files?
+
+- Memory pressure — blobs destroy the database buffer pool
+- Backup bloat — enormous and slow
+- No streaming — databases are not built for byte streaming
+- Scaling mismatch — storage cost and query cost are completely different curves
+
+The presigned URL pattern goes further: the client talks directly to S3, and the server is completely out of the data path:
+
+```
+Client → Server: "I want to upload video.mp4"
+Server → S3: generate presigned PUT URL
+Server → Client: presigned URL + uploadId
+Client → S3: PUT directly (server never touches the bytes)
+S3 → Client: ETag per chunk (S3's receipt confirmation)
+Client → Server: "chunk 1 confirmed, ETag is xyz"
+Server → DB: receivedChunks = [1]
+```
+
+That ETag S3 returns per chunk matters — you need it to call `CompleteMultipartUpload` at the end. S3 uses the ETags to assemble chunks in the correct order.
+
+---
+
+## The Part That Trips Everyone Up — How Does The Server _Actually_ Know What Was Received?
+
+This is what my colleague was really asking. And this is where most explanations fall short.
+
+There are three completely independent layers at play, and conflating them is how you end up with an answer that's technically not wrong but completely unsatisfying.
+
+### The Courier Analogy
+
+Picture a courier company delivering 100 parcels to a warehouse.
+
+The **delivery guy** drives up, knocks on the warehouse door, and hands over parcel #42. The warehouse worker at the door signs the delivery slip. Delivery guy leaves — his job is done.
+
+But then the warehouse worker trips and drops the parcel before shelving it. Or the warehouse catches fire thirty seconds after he signed.
+
+The delivery slip says "received." The parcel is lost.
+
+This is exactly the split between TCP and your application. The signed slip is the TCP ACK. The parcel safely on the shelf, logged in the inventory system, is the HTTP 200. These are not the same thing, and the gap between them is where data loss hides.
+
+### Layer 1 — TCP Checksum
+
+- Handled entirely by the OS network stack — your application code never sees it
+- Hop-by-hop — verified and recomputed at each router, not end-to-end
+- Covers bytes in transit only, not what happens after they land
+
+### Layer 2 — TCP ACK
+
+- TCP says "bytes reached the server's network buffer" — that is all it says
+- TCP ACK ≠ server persisted to disk
+- The server could crash after TCP ACK but before writing to S3
+
+```
+Client                          Server
+  |──── chunk #42 bytes ────────>|
+  |                              | ← bytes in OS buffer
+  |<─── TCP ACK ────────────────| ← OS sends ACK immediately
+  |                              | ← server process reads buffer
+  |                              | ← server writes to S3
+  |                              | 💥 SERVER CRASHES HERE
+  |<─── HTTP 200? Never arrives ─X
+```
+
+The delivery guy signed the slip. The warehouse burned down.
+
+### Layer 3 — HTTP 200 OK
+
+This is the only signal the client trusts. And it only goes out **after** all of these complete:
+
+1. Read bytes from buffer ✓
+2. Verify application-level checksum ✓
+3. Write to S3 ✓
+4. Update DB (`receivedChunks = [..., 42]`) ✓
+
+The client's rule is simple: **no 200 means re-send the chunk.** It doesn't matter why the 200 never came — connection drop, server crash, slow disk write. Chunk uploads are idempotent by design. Re-sending causes no harm.
+
+### Layer 4 — Application Checksum (SHA-256)
+
+The client computes SHA-256 of the chunk and sends it as a header:
+
+```
+X-Chunk-Checksum: abc123def456
+```
+
+The server recomputes it on receipt and compares. This is not TCP's checksum — it is application code running explicitly on your server.
+
+| Layer       | Checksum    | Who handles it       | What it covers                    |
+| ----------- | ----------- | -------------------- | --------------------------------- |
+| TCP         | 16-bit      | OS, invisible to app | In-transit bytes, hop-by-hop      |
+| Application | SHA-256/MD5 | Your server code     | End-to-end, including disk writes |
+
+TCP's is automatic and fast. The application checksum is stronger and covers the full journey including S3 writes. They coexist — each catches failure modes the other cannot.
+
+The warehouse worker at the door checks that the box isn't crushed (TCP). The warehouse manager opens the box, counts the items, and signs the inventory ledger only when everything is confirmed on the shelf (application checksum + HTTP 200).
+
+---
+
+## Resumable Downloads
+
+The same principle, mirrored. The only difference is who tracks state — for uploads it's the server, for downloads it's the client.
+
+### The Key Mechanism — HTTP Range Requests
+
+```
+GET /files/video.mp4
+Range: bytes=52428800-
+
+Response: HTTP/1.1 206 Partial Content
+Content-Range: bytes 52428800-524288000/524288000
+Accept-Ranges: bytes   ← server advertising that it supports this
+```
+
+If the server doesn't support range requests, it ignores the header and returns a `200` with the full file. No resumability possible. The `Accept-Ranges: bytes` in the response is the server saying "yes, I understand this pattern."
+
+### How The Client Tracks Progress
+
+```typescript
+interface DownloadState {
+  url: string;
+  totalBytes: number;
+  downloadedBytes: number; // the cursor — where we left off
+  filePath: string; // temp file on disk (.crdownload, .part)
+}
+```
+
+New bytes get **appended** to the temp file on disk. On completion, the file is renamed. This is why you see `.crdownload` files in your downloads folder mid-download — that is not a bug, it is the resume mechanism working exactly as designed.
+
+### The ETag Guard — What If The File Changed?
+
+What if the file on the server changed between your first attempt and the resume? You would append new-file bytes to old-file bytes and get a corrupted file with no error message.
+
+The fix: conditional headers.
+
+```
+Range: bytes=52428800-
+If-Match: "abc123etag"   ← only give me this range IF the file is still this version
+```
+
+If the file changed, the server returns `412 Precondition Failed`. Client restarts from scratch. Without this guard, you could silently assemble a corrupted file and never know.
+
+---
+
+## Uploads vs Downloads — Side By Side
+
+|                             | Upload                             | Download                         |
+| --------------------------- | ---------------------------------- | -------------------------------- |
+| **Who tracks progress**     | Server (DB session)                | Client (local storage / disk)    |
+| **Resume query**            | `GET /upload/:id/status`           | Client reads its own saved state |
+| **Key mechanism**           | `uploadId` + chunk index           | `Range` header + byte offset     |
+| **Partial storage**         | Server's temp store / S3 multipart | `.part` file on client disk      |
+| **Integrity check**         | SHA-256 per chunk                  | ETag / Last-Modified headers     |
+| **HTTP status for partial** | `200 OK` per chunk                 | `206 Partial Content`            |
+
+---
+
+## Application Checksums — Not Just For File Uploads
+
+Worth knowing that this pattern shows up everywhere once you start looking:
+
+- **Git** — every commit and blob is identified by SHA-1/SHA-256; corruption is detected immediately on pull
+- **Docker** — each image layer has a SHA-256 digest verified on pull
+- **pnpm** — the `integrity` field in `pnpm-lock.yaml` verifies downloaded tarballs against the registry
+- **S3** — you can pass MD5/SHA-256 on upload; S3 verifies before confirming the write
+
+The general principle: the higher the stakes of the data, the more layers of checksum validation you add. TCP's 16-bit checksum is just the baseline — it was never meant to be the only safety net.
+
+---
+
+## How Big Players Implement This
+
+- **AWS S3** — initiate multipart upload → get `UploadId` → upload parts (minimum 5MB each) → `CompleteMultipartUpload` with all ETags in order
+- **Google Cloud Storage** — resumable upload URI with `Content-Range` header pattern, very close to what we described above
+- **tus protocol** — open standard for resumable uploads, used by Vimeo and Cloudflare among others
+
+---
+
+## The Clean Mental Model
+
+Resumable transfers = treat every chunk as an **independent, idempotent transaction**.
+
+Track completion server-side for uploads, client-side for downloads. Resume = query state, skip confirmed chunks. The HTTP 200 — not the TCP ACK — is the only signal you trust, because TCP ACK only means "bytes reached the buffer." It says nothing about what happened after.
+
+Three layers of reliability, each catching what the previous one cannot:
+
+1. **TCP checksum** — catches corruption in transit
+2. **HTTP 200** — confirms application-level persistence
+3. **SHA-256** — guarantees end-to-end integrity including storage
+
+Next time someone asks you this over snacks, you are ready. And if they follow up with something even deeper — well, at least you know where the good documentation actually is now. 😄
+
+Pranipat 🙏!
