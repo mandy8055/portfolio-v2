@@ -1,3 +1,6 @@
+allowBuilds:
+  "@tsparticles/engine": true
+  sharp: true
 onlyBuiltDependencies:
   - "@tsparticles/engine"
   - sharp
