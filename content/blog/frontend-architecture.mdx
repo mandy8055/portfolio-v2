@@ -1,7 +1,7 @@
 ---
 title: 'Frontend Architecture: Where Does This File Go?'
 description: 'Onion, Clean, Hexagonal — three names, one idea, and the folder structure that finally makes it click.'
-date: 2026-05-15
+date: 2026-05-31
 tags: ['react', 'typescript', 'architecture', 'frontend', 'web-development']
 ---
 
@@ -11,7 +11,7 @@ The code was fine. Logic was correct. TypeScript was happy. Tests passed.
 
 And then the review comment landed:
 
-> "Where does this actually belong?"
+> Where does this actually belong?
 
 That was it. No suggested fix, no alternative. Just that one question hanging in the thread like a grenade with the pin pulled.
 
@@ -39,7 +39,7 @@ The framework is not the problem. React, Next.js, Vue — none of them tell you 
 
 ## Atomic Design — Why It Works And Then Stops Working
 
-Atomic Design gets a bad reputation it does not fully deserve. For pure UI work — design systems, component libraries, isolated presentational components — it is still a solid mental model. Atoms, molecules, organisms, templates, pages. Clean hierarchy. Makes sense on a whiteboard.
+[Atomic Design](https://atomicdesign.bradfrost.com/chapter-2/) gets a bad reputation it does not fully deserve. For pure UI work — design systems, component libraries, isolated presentational components — it is still a solid mental model. Atoms, molecules, organisms, templates, pages. Clean hierarchy. Makes sense on a whiteboard.
 
 The trouble arrives when business logic shows up. And it always shows up.
 
@@ -51,7 +51,7 @@ Suddenly your "molecule" is making an API call. Your "organism" is managing auth
 
 Here is something the internet does not say clearly enough: **Onion Architecture, Clean Architecture, and Hexagonal Architecture are the same idea with different diagrams.**
 
-Uncle Bob drew circles. Jeffrey Palermo drew different circles. Alistair Cockburn drew a hexagon. The underlying principle is identical across all three:
+[Uncle Bob](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) drew circles. [Jeffrey Palermo](https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/) drew different circles. [Alistair Cockburn](https://alistair.cockburn.us/hexagonal-architecture/) drew a hexagon. The underlying principle is identical across all three:
 
 > **Business logic at the center. Everything else on the outside. Dependencies always point inward — never outward.**
 
@@ -98,17 +98,22 @@ If your domain folder imports anything from `ui/` or `infrastructure/`, that is 
 
 ### `application/` — The Orchestrator
 
-Custom hooks, state management logic, use cases. This layer knows about the domain and coordinates infrastructure — but it does not care _how_ the infrastructure works, only _what_ it returns.
+Custom hooks, state management logic, use cases. This layer knows about the domain and coordinates infrastructure. To keep the application layer completely clean, it shouldn't tightly import a concrete infrastructure file directly. Instead, it interacts with data repositories or stores that abstract those implementation details away.
 
 ```typescript
 // application/hooks/use-dealers.ts
-import { useDealersRepository } from '@/infrastructure/repositories/dealers';
+import { useDealersStore } from '@/application/store/dealers-store';
 import { sortByDistance } from '@/domain/logic/sort-dealers';
 
-export const useDealers = (location: Coordinates) => {
-  const { fetchDealers, isLoading, error } = useDealersRepository();
+export const useDealers = (location: { lat: number; lng: number }) => {
+  // We read state and pull the loading/error flags from our store orchestrator
+  const { dealers, isLoading, error, loadDealers } = useDealersStore();
 
-  const dealers = fetchDealers(location);
+  // Trigger side-effect via the store's delegation
+  useEffect(() => {
+    loadDealers(location);
+  }, [location, loadDealers]);
+
   const sorted = dealers ? sortByDistance(dealers) : [];
 
   return { dealers: sorted, isLoading, error };
@@ -123,23 +128,29 @@ API clients, localStorage adapters, analytics wrappers. This is where implementa
 
 ```typescript
 // infrastructure/repositories/dealers.ts
-import { useQuery } from '@apollo/client';
+import { client } from '@/infrastructure/api/apollo-client';
 import { GET_DEALERS } from './queries';
 import type { Dealer } from '@/domain/models/dealer';
 
-export const useDealersRepository = () => {
-  const { data, loading, error } = useQuery(GET_DEALERS);
+// A pure async function that handles backend fetching and shape translation
+export const fetchDealersFromApi = async (location: {
+  lat: number;
+  lng: number;
+}): Promise<Dealer[]> => {
+  const { data } = await client.query({
+    query: GET_DEALERS,
+    variables: { location },
+  });
 
-  // Translate the API shape into the domain shape
-  const dealers: Dealer[] =
-    data?.dealers.map((d) => ({
+  // Translate the raw API shape into our predictable domain shape
+  return (
+    data?.dealers.map((d: any) => ({
       id: d.id,
       name: d.displayName,
       distance: d.distanceKm,
       isOpen: d.operatingStatus === 'OPEN',
-    })) ?? [];
-
-  return { fetchDealers: () => dealers, isLoading: loading, error };
+    })) ?? []
+  );
 };
 ```
 
@@ -150,7 +161,7 @@ If tomorrow the API switches from GraphQL to REST, only this file changes. The h
 Components, styles, design system. Their job is to render what they are given and report what the user did. Nothing more.
 
 ```tsx
-// ui/components/DealerCard.tsx
+// ui/components/dealer-card.tsx
 import type { Dealer } from '@/domain/models/dealer';
 
 // No API calls. No business logic. Just render.
@@ -180,44 +191,32 @@ State management is the one that trips people up the most. It feels like it shou
 // application/store/dealers-store.ts
 import { create } from 'zustand';
 import type { Dealer } from '@/domain/models/dealer';
-//                         ↑ imports from domain — dependency pointing inward ✅
-
-type DealersStore = {
-  selectedDealer: Dealer | null;
-  setSelectedDealer: (dealer: Dealer) => void;
-  clearSelection: () => void;
-};
-
-export const useDealersStore = create<DealersStore>((set) => ({
-  selectedDealer: null,
-  setSelectedDealer: (dealer) => set({ selectedDealer: dealer }),
-  clearSelection: () => set({ selectedDealer: null }),
-}));
-```
-
-Clean. The store knows about the domain shape but nothing about how the data arrived.
-
-**The nuance worth knowing — when the store needs data from the API:**
-
-This is where teams quietly violate the dependency rule without realising it. If the store starts calling `fetch()` or `axios` directly, the application layer is reaching past infrastructure and doing infrastructure's job.
-
-```typescript
-// ❌ Application layer doing infrastructure's job
-export const useDealersStore = create((set) => ({
-  loadDealers: async (location) => {
-    const res = await axios.get('/api/dealers'); // wrong layer, wrong concern
-    set({ dealers: res.data });
-  },
-}));
-
-// ✅ Application layer delegating correctly
 import { fetchDealersFromApi } from '@/infrastructure/repositories/dealers';
 //                                  ↑ infrastructure does the dirty work
 
-export const useDealersStore = create((set) => ({
+type DealersStore = {
+  dealers: Dealer[];
+  selectedDealer: Dealer | null;
+  isLoading: boolean;
+  error: string | null;
+  setSelectedDealer: (dealer: Dealer) => void;
+  loadDealers: (location: { lat: number; lng: number }) => Promise<void>;
+};
+
+export const useDealersStore = create<DealersStore>((set) => ({
+  dealers: [],
+  selectedDealer: null,
+  isLoading: false,
+  error: null,
+  setSelectedDealer: (dealer) => set({ selectedDealer: dealer }),
   loadDealers: async (location) => {
-    const dealers = await fetchDealersFromApi(location); // clean delegation
-    set({ dealers });
+    set({ isLoading: true, error: null });
+    try {
+      const dealers = await fetchDealersFromApi(location); // clean delegation ✅
+      set({ dealers, isLoading: false });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to fetch', isLoading: false });
+    }
   },
 }));
 ```
@@ -227,9 +226,30 @@ The store orchestrates. The repository fetches. One line of difference, entirely
 The mental model to keep in mind:
 
 - **Store files** → `application/store/`
-- **What the store holds** → domain types
+- **What the store holds** → domain types and status flags
 - **How the store gets data** → delegates to `infrastructure/`
 - **What the store exposes** → consumed by `ui/` components and `application/` hooks
+
+---
+
+## Putting It All Together: The Feature Blueprint
+
+When you map a feature (like a Dealer Locator) cleanly across these layers, your directory architecture becomes a predictable blueprint where every file has a single unmistakable home:
+
+```bash
+src/features/dealer-locator/
+├── domain/
+│   ├── models/dealer.ts
+│   └── logic/sort-dealers.ts
+├── application/
+│   ├── store/dealers-store.ts
+│   └── hooks/use-dealers.ts
+├── infrastructure/
+│   └── repositories/dealers.ts
+└── ui/
+    ├── components/dealer-card.tsx
+    └── components/dealer-list.tsx
+```
 
 ---
 
@@ -239,7 +259,7 @@ Back to that PR. The developer wanted to transform an API response into a UI-con
 
 That is infrastructure. It lives in `infrastructure/repositories/` or `infrastructure/adapters/`. It is the translator between what the API returns and what the domain model expects.
 
-The PR comment could have been: _"This looks like an infrastructure concern — can we move it to `infrastructure/adapters/`?"_ Twelve words. No twenty-comment thread. No Friday evening `utils/` regret.
+The PR comment could have been: _"This looks like an infrastructure concern — can we move it to `infrastructure/repositories/`?"_ Twelve words. No twenty-comment thread. No Friday evening `utils/` regret.
 
 When your layers are defined, the question answers itself most of the time.
 
