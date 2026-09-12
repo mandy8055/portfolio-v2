@@ -2,21 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import Particles, {
-  initParticlesEngine,
+  ParticlesProvider,
+  useParticlesProvider,
   type IParticlesProps,
 } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 import { useTheme } from 'next-themes';
 
-export function ParticlesBackground() {
+function ParticlesRenderer() {
   const { theme } = useTheme();
+  const { loaded } = useParticlesProvider();
   const [colors, setColors] = useState(['#f97316', '#fb923c', '#fbbf24']);
 
   useEffect(() => {
-    initParticlesEngine(async (engine) => {
-      await loadSlim(engine);
-    });
-
     // Read theme colors from CSS variables once on mount
     const computedStyle = getComputedStyle(document.documentElement);
     const primary = computedStyle.getPropertyValue('--theme-primary').trim() || '#f97316';
@@ -24,6 +22,10 @@ export function ParticlesBackground() {
     const tertiary = computedStyle.getPropertyValue('--theme-tertiary').trim() || '#fbbf24';
     setColors([primary, secondary, tertiary]);
   }, []);
+
+  if (!loaded) {
+    return null;
+  }
 
   const options: IParticlesProps['options'] = {
     background: {
@@ -52,8 +54,13 @@ export function ParticlesBackground() {
       },
     },
     particles: {
-      color: {
-        value: colors,
+      paint: {
+        fill: {
+          enable: true,
+          color: {
+            value: colors,
+          },
+        },
       },
       links: {
         color: theme === 'dark' ? '#ffffff' : '#1a1a1a',
@@ -97,5 +104,13 @@ export function ParticlesBackground() {
       options={options}
       className='absolute inset-0'
     />
+  );
+}
+
+export function ParticlesBackground() {
+  return (
+    <ParticlesProvider init={loadSlim}>
+      <ParticlesRenderer />
+    </ParticlesProvider>
   );
 }
