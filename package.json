@@ -2,7 +2,7 @@
   "name": "portfolio-manuj",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@11.1.2",
+  "packageManager": "pnpm@12.4.1",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "dev": "next dev",
