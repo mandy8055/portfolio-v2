@@ -21,7 +21,7 @@ export const projects: Project[] = [
   {
     title: 'Smart Filters POC',
     description:
-      'AI-powered natural language product filtering for e-commerce. Transform queries like "small family under $800" into precise product filters using HuggingFace AI.',
+      'AI-powered natural language product filtering for e-commerce, taken from this proof of concept to production in a product app at work. Transform queries like "small family under $800" into precise product filters (prototyped with HuggingFace AI).',
     tags: ['Next.js', 'TypeScript', 'HuggingFace', 'AI/ML', 'Tailwind CSS'],
     featured: true,
     github: 'https://github.com/mandy8055/smart-filters-poc',

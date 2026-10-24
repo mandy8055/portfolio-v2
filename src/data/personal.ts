@@ -17,7 +17,7 @@ export interface PersonalInfo {
 export const personalInfo: PersonalInfo = {
   name: 'Manuj Sankrit',
   role: 'Senior Software Engineer',
-  tagline: 'Senior Software Engineer at B/S/H',
+  tagline: 'Senior Software Engineer at ITC Infotech',
   email: 'msankrit8055@gmail.com',
   location: 'India',
   social: [
@@ -97,12 +97,21 @@ export const aboutMe = {
   experience: [
     {
       title: 'Senior Software Engineer',
-      company: 'B/S/H',
+      company: 'ITC Infotech(B/S/H)',
       period: 'May 2025 - Present',
       location: 'India',
       description:
-        'Building scalable full-stack applications with React, Next.js, and Node.js. Optimizing CI/CD pipelines, and monitoring performance through DataDog and SpeedCurve.',
+        'Technical lead building scalable full-stack applications with React, Next.js, TypeScript, and Node.js. Optimizing CI/CD pipelines, and monitoring performance through DataDog and SpeedCurve.',
       highlights: [
+        'Led, as technical lead of 2 developers, the 0-to-1 build of an internal HR-insights platform (NestJS, Next.js, PostgreSQL/Prisma, GCP), from scaffold to role-based rollups and attrition reporting in about 8 weeks; launching December 2026 for 3,000+ employees',
+        'Owned the architecture, database schema, CI/CD and cloud setup (GCP Cloud Run, Cloud SQL) for the platform, with a minimal-PII design that keeps sensitive HR data hidden from developers',
+        'Served as technical lead of 4 developers on a Next.js dealer locator live in 58 countries (3.81M requests per month); raised the desktop Lighthouse score from 61 to 95 and cut page weight by about 16%',
+        'Delivered SEO prefiltered dealer pages across the app, GraphQL server and headless CMS, shaping a cross-team content-model decision and entry-ID-based URLs for safe language switching',
+        'Led a shared React location-finder component library (filter bar, filter flyout, virtualized sidebar, tab-aware pagination) used by 2 production apps, built with Figma-to-code workflows and a Figma MCP server',
+        'Shipped AI-powered natural-language product filtering ("small family under $800" to structured filters) from proof of concept to production in the product app',
+        'Built a reusable agent skill that cut component-library updates from 2-3 days to about 30-35 minutes (about $1.20 per run)',
+        'Remediated 300+ vulnerabilities across 4 production repositories under tiered SLAs (critical within 36 hours)',
+        'Migrated 2 apps to Next.js 16 and removed about 1,000 lines of dead code with Knip, enforced by a CI check on every approved PR',
         'Reduced TBT by 20% and page load by 25% through lazy hydration and async updates',
         'Delivered spin-speed optimization features, enhancing user engagement',
         'Monitored app performance using DataDog and SpeedCurve, enabling proactive optimizations',
@@ -119,8 +128,16 @@ export const aboutMe = {
         'Docker',
         'Storybook',
         'GraphQL',
+        'Apollo',
         'Vitest',
         'GitHub Actions',
+        'NestJS',
+        'PostgreSQL',
+        'Prisma',
+        'GCP',
+        'Contentstack',
+        'MCP',
+        'Knip',
       ],
     },
     {
